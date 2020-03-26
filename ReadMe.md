@@ -14,8 +14,8 @@ This project aims to:
 
 	-	create a `lib` directory for static linking applications;
 
-	-	create a `deploy` directory with the binaries needed for dynamic linking
-		applications
+	-	create a `install` directory with the binaries needed for dynamic
+		linking applications
 
 3.	Support different compilers:
 
@@ -29,12 +29,8 @@ This project aims to:
 
 ## Prerequisites
 
-### For all branches
-
 -	Git for Windows
-
 -	CMake
-
-### Additional prerequisites for the msvs branch
-
--	Microsoft Visual Studio Community
+-	a working c/c++ compiler environment
+-	nasm
+-  	pkg-config

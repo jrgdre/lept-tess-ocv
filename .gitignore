@@ -1,0 +1,10 @@
+# ignore everything
+*
+# but
+!.gitattributes
+!.gitignore
+!CMakeLists.txt
+!lept-tess-ocv-build.sh
+!License.md
+!ReadMe.md
+!Releases.md
