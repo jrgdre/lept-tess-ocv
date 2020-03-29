@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
 ## Leptonica, Tesseract, OpenCV build
-# Tries to build all packages and the dependencies from the most recent
-# master commits in there git repositories.
+# Tries to build all packages and the dependencies from the most recent stable
+# release master commits in there git repositories (if exists).
 #
 # prerequisites:
 #   - git
@@ -10,6 +10,15 @@
 #   - a c/c++ compiler
 #   - nasm
 #   - pkg-config
+#   - you need to define the PYTHON3 environment variable, that points to your
+#     python 3 binary
+#
+# usage:
+#   - MS-Windows OS / MSVC:
+#       1. open Developer Command Prompt for VS
+#       2. start a Bash-Shell in the command prompt
+#       These two steps make sure all the environment variables are set right.
+#       3. run this script from where you stored it
 #
 # (c)2020 Medical Data Solutions GmbH
 # License: MIT (s. License.md)
@@ -35,7 +44,7 @@
 ##  settings
 ## ==========
 
-SCRIPT_NAME="msw-gitshell-build"
+SCRIPT_NAME="lept-tess-ocv-build"
 
 # default configuration values
 PROJECT=""
@@ -54,6 +63,7 @@ CXX_COMPILER_VERSION=`cat __BUILD_CXX_COMPILER_VERSION`
 OS=`cat __BUILD_OS`
 OS_PLATFORM=`cat __BUILD_OS_PLATFORM`
 OS_RELEASE=`cat __BUILD_OS_RELEASE`
+GL_INCLUDE_DIR=`cat __GL_INCLUDE_DIR`
 cd ..
 rm -rf ./.tmp
 
@@ -139,6 +149,7 @@ done
 # echo $OS_RELEASE
 # echo $CXX_COMPILER_ID
 # echo $CXX_COMPILER_VERSION
+# echo $GL_INCLUDE_DIR
 
 # define common directories
 REPO_DIR=$(pwd)
@@ -192,18 +203,25 @@ cmake_build() {
 # $1 project name
 cmake_configure() {
     mkdir -p $BUILD_DIR/$1
+    local PREFIX_PATHS="$BUILD_DIR/$1;$INSTALL_DIR"
     cd $BUILD_DIR/$1
     if [  ! -z $GENERATOR  ]; then
         cmake $SRC_DIR/$1 \
             -G "$GENERATOR" \
-            -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+            -DCMAKE_MODULE_PATH=$INSTALL_DIR/lib/cmake \
+            -DCMAKE_PREFIX_PATH=$PREFIX_PATHS \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-            $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16}
+            -Wno-derecated \
+            $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} \
+            ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27}
     else
         cmake $SRC_DIR/$1 \
-            -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+            -DCMAKE_MODULE_PATH=$INSTALL_DIR/lib/cmake \
+            -DCMAKE_PREFIX_PATH=$PREFIX_PATHS \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-            $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16}
+            -Wno-derecated \
+            $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} \
+            ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27}
     fi
     cd $REPO_DIR
 }
@@ -277,6 +295,49 @@ fi
 ##  build prerequisites
 ## =====================
 
+
+## freeglut
+# no GIT repository, fetching a tar
+if [  ! -d $SRC_DIR/freeglut  ]; then
+    cd $SRC_DIR
+    wget -c --show-progress \
+        http://downloads.sourceforge.net/project/freeglut/freeglut/3.2.1/freeglut-3.2.1.tar.gz
+    tar -xzf freeglut-3.2.1.tar.gz
+    mv freeglut-3.2.1 freeglut
+fi
+# build static link libraries
+link_dependencies static
+cmake_configure freeglut \
+    -DFREEGLUT_BUILD_SHARED_LIBS=OFF \
+    -DFREEGLUT_BUILD_STATIC_LIBS=ON \
+    -DFREEGLUT_REPLACE_GLUT=OFF \
+    -DFREEGLUT_BUILD_DEMOS=OFF
+cmake_build freeglut
+mv -f $LIB_DIR_TMP/freeglut_static.lib $LIB_DIR_OUT-static/freeglut.lib
+cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
+# We also need to run the GLUT replacement version, since downstream some
+# packages expect glut.h
+cmake_configure freeglut \
+    -DFREEGLUT_BUILD_SHARED_LIBS=OFF \
+    -DFREEGLUT_BUILD_STATIC_LIBS=ON \
+    -DFREEGLUT_REPLACE_GLUT=ON \
+    -DFREEGLUT_BUILD_DEMOS=OFF
+cmake_build freeglut
+# We have to discard the glut.lib crated in this step, or CMake's FindGLUT.cmake
+# gets confused.
+# rm -rf $LIB_DIR_TMP
+rm -f $INSTALL_DIR/bin/glut.dll # we doon't need this one
+# build dynamic link libraries
+link_dependencies dynamic
+cmake_configure freeglut \
+    -DFREEGLUT_BUILD_SHARED_LIBS=ON \
+    -DFREEGLUT_BUILD_STATIC_LIBS=OFF \
+    -DFREEGLUT_REPLACE_GLUT=OFF \
+    -DFREEGLUT_BUILD_DEMOS=OFF
+cmake_build freeglut
+cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
+rm -rf $LIB_DIR_TMP
+
 ## zlib
 git_clone_pull zlib \
     https://github.com/madler/zlib.git origin/master
@@ -310,14 +371,12 @@ rm -rf $LIB_DIR_TMP
 # - `<version number>`
 # The last one sucks, it has nothing that says: "This belongs to giflib" and it
 # can change.
-# Since this is the first time we copy something to the cmake directory, we just
-# copy all that's there.
-# __But this makes the code SENSITIVE TO WHEN THIS PACKAGE IS BUILD!__
 git_clone_pull giflib \
     https://github.com/xbmc/giflib.git origin/master
 link_dependencies static
 cmake_configure giflib \
     -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
+rm -rf $LIB_DIR_TMP/cmake # avoid polluting target dirs with wrong versions
 cmake_build giflib
 cp $LIB_DIR_TMP/giflib.lib $LIB_DIR_OUT-dynamic/giflib.lib
 cp $LIB_DIR_TMP/giflib.lib $LIB_DIR_OUT-static/giflib.lib
@@ -329,11 +388,10 @@ rm -rf $LIB_DIR_TMP
 git_clone_pull libjpeg-turbo \
     https://github.com/libjpeg-turbo/libjpeg-turbo.git origin/master
 link_dependencies static
-cmake_configure libjpeg-turbo
+cmake_configure libjpeg-turbo \
+    -DWITH_12BIT=ON
 cmake_build libjpeg-turbo
-cp $LIB_DIR_TMP/turbojpeg.lib $LIB_DIR_OUT-dynamic/turbojpeg.lib
 cp $LIB_DIR_TMP/jpeg.lib $LIB_DIR_OUT-dynamic/jpeg.lib
-cp $LIB_DIR_TMP/turbojpeg-static.lib $LIB_DIR_OUT-static/turbojpeg.lib
 cp $LIB_DIR_TMP/jpeg-static.lib $LIB_DIR_OUT-static/jpeg.lib
 mkdir -p $LIB_DIR_OUT-dynamic/pkgconfig/
 cp -rf $LIB_DIR_TMP/pkgconfig/libjpeg.pc $LIB_DIR_OUT-dynamic/pkgconfig/
@@ -343,9 +401,9 @@ cp -rf $LIB_DIR_TMP/pkgconfig/libjpeg.pc $LIB_DIR_OUT-static/pkgconfig/
 cp -rf $LIB_DIR_TMP/pkgconfig/libturbojpeg.pc $LIB_DIR_OUT-static/pkgconfig/
 rm -rf $LIB_DIR_TMP
 
-## openjpeg
-# this one acknowledges BUILD_SHARED_LIBS
-# we want static and dynamic libs, so we run cmake twice
+# openjpeg
+this one acknowledges BUILD_SHARED_LIBS
+we want static and dynamic libs, so we run cmake twice
 git_clone_pull openjpeg \
     https://github.com/uclouvain/openjpeg.git origin/master
 link_dependencies static
@@ -364,15 +422,15 @@ cp $LIB_DIR_TMP/openjp2.lib $LIB_DIR_OUT-dynamic/openjp2.lib
 cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
 rm -rf $LIB_DIR_TMP
 
-## jbigkit
-# Under MSCV the libraries build seem to be the same, wether we select
-# BUILD_SHARED_LIBS or not.
-# Makes you wonder, if the dynamic linking really is a dynamic linking.
-# Right now we roll with it.
+# jbigkit
+Under MSCV the libraries build seem to be the same, wether we select
+BUILD_SHARED_LIBS or not.
+Makes you wonder, if the dynamic linking really is a dynamic linking.
+Right now we roll with it.
 git_clone_pull jbigkit \
     https://github.com/zdenop/jbigkit.git origin/master
-# We always need to run both configurations or
-# the dynamic library build fails with linker errors.
+We always need to run both configurations or the dynamic library build fails
+with linker errors.
 link_dependencies static
 cmake_configure jbigkit -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
@@ -386,38 +444,12 @@ cmake_build jbigkit
 cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
 rm -rf $LIB_DIR_TMP
 
-## zstd
-git_clone_pull zstd \
-    https://github.com/facebook/zstd.git origin/master
-# This repository has a different layout.
-# So we need a custom configure handler here.
-link_dependencies static
-mkdir -p $BUILD_DIR/zstd
-cd $BUILD_DIR/zstd
-if [ ! z $CMAKE_GENERATOR ]; then
-    cmake $SRC_DIR/zstd/build/cmake \
-        -G "$CMAKE_GENERATOR" \
-        -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
-        -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
-        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-else
-    cmake $SRC_DIR/zstd/build/cmake \
-        -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
-        -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
-        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-fi
-cd $REPO_DIR
-cmake_build zstd
-cp $LIB_DIR_TMP/zstd.lib $LIB_DIR_OUT-dynamic/zstd.lib
-cp $LIB_DIR_TMP/zstd_static.lib $LIB_DIR_OUT-static/zstd.lib
-rm -rf $LIB_DIR_TMP
-
 ## lzma (xz)
 # This package currently has the problem of not providing a lib file under
 # MSVC, if you only build the shared lib.
 # The way it is currently build, the lib file in -static is the same as the
 # lib file in -dynamic.
-# That probably will cause problems later in on of the two build branches.
+# That probably will cause problems later in one of the two build branches.
 # Right now we don't have a solution for this.
 git_clone_pull xz \
     https://git.tukaani.org/xz.git origin/master
@@ -435,20 +467,99 @@ cmake_build xz
 cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
 rm -rf $LIB_DIR_TMP
 
+## zstd
+git_clone_pull zstd \
+    https://github.com/facebook/zstd.git origin/master
+# This repository has a different layout.
+# So we need a custom configure handler here.
+mkdir -p $BUILD_DIR/zstd
+cd $BUILD_DIR/zstd
+link_dependencies static
+if [ ! z $CMAKE_GENERATOR ]; then
+    cmake $SRC_DIR/zstd/build/cmake \
+        -G "$CMAKE_GENERATOR" \
+        -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+        -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -DZSTD_BUILD_SHARED=OFF \
+        -DZSTD_BUILD_STATIC=ON \
+        -DZSTD_LEGACY_SUPPORT=ON \
+        -DZSTD_ZLIB_SUPPORT=ON \
+        -DZSTD_BUILD_PROGRAMS=ON
+else
+    cmake $SRC_DIR/zstd/build/cmake \
+        -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+        -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -DZSTD_BUILD_SHARED=OFF \
+        -DZSTD_BUILD_STATIC=ON \
+        -DZSTD_LEGACY_SUPPORT=ON \
+        -DZSTD_ZLIB_SUPPORT=ON \
+        -DZSTD_BUILD_PROGRAMS=ON
+fi
+cd $REPO_DIR
+cmake_build zstd
+cp $LIB_DIR_TMP/zstd_static.lib $LIB_DIR_OUT-static/zstd.lib
+rm -rf $LIB_DIR_TMP
+cd $BUILD_DIR/zstd
+link_dependencies dynamic
+if [ ! z $CMAKE_GENERATOR ]; then
+    cmake $SRC_DIR/zstd/build/cmake \
+        -G "$CMAKE_GENERATOR" \
+        -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+        -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -DZSTD_BUILD_SHARED=ON \
+        -DZSTD_BUILD_STATIC=OFF \
+        -DZSTD_LEGACY_SUPPORT=ON \
+        -DZSTD_BUILD_PROGRAMS=OFF
+else
+    cmake $SRC_DIR/zstd/build/cmake \
+        -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+        -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -DZSTD_BUILD_SHARED=ON \
+        -DZSTD_BUILD_STATIC=OFF \
+        -DZSTD_LEGACY_SUPPORT=ON \
+        -DZSTD_BUILD_PROGRAMS=OFF
+fi
+cd $REPO_DIR
+cmake_build zstd
+cp $LIB_DIR_TMP/zstd.lib $LIB_DIR_OUT-dynamic/zstd.lib
+rm -rf $LIB_DIR_TMP
+
 ## libwebp (step 1, without tiff support (libtiff uses libwebp))
 # Again with MSVC static and dynamic link libraries are the same and the *.dll
 # is extremely small. Makes you wonder, if dynamic linking is really supported.
+# Also we always first need to build the static libs, with one of GIF2WEB or
+# IMG2WEB =ON, or some dependencies are missing in the dynamic build.
 git_clone_pull libwebp \
     https://chromium.googlesource.com/webm/libwebp origin/master
 link_dependencies static
 cmake_configure libwebp -DBUILD_SHARED_LIBS=OFF \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
+    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+    -DWEBP_BUILD_ANIM_UTILS=OFF \
+    -DWEBP_BUILD_CWEBP=OFF \
+    -DWEBP_BUILD_DWEBP=OFF \
+    -DWEBP_BUILD_EXTRAS=OFF \
+    -DWEBP_BUILD_GIF2WEBP=ON \
+    -DWEBP_BUILD_IMG2WEBP=OFF \
+    -DWEBP_BUILD_VWEBP=OFF \
+    -DWEBP_BUILD_WEBPINFO=OFF
 cmake_build libwebp
 cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
 rm -rf $LIB_DIR_TMP
 link_dependencies dynamic
 cmake_configure libwebp -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
+    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+    -DWEBP_BUILD_ANIM_UTILS=ON \
+    -DWEBP_BUILD_CWEBP=ON \
+    -DWEBP_BUILD_DWEBP=ON \
+    -DWEBP_BUILD_EXTRAS=ON \
+    -DWEBP_BUILD_GIF2WEBP=ON \
+    -DWEBP_BUILD_IMG2WEBP=ON \
+    -DWEBP_BUILD_VWEBP=ON \
+    -DWEBP_BUILD_WEBPINFO=ON
 cmake_build libwebp
 cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
 rm -rf $LIB_DIR_TMP
@@ -473,8 +584,36 @@ cmake_build libtiff
 cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
 rm -rf $LIB_DIR_TMP
 
-## libarchive
-# linking dependencies statically is the whole point
+## glfw (opengl)
+git_clone_pull glfw \
+    https://github.com/glfw/glfw.git origin/master
+link_dependencies dynamic
+cmake_configure glfw -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
+    -DGLFW_BUILD_EXAMPLES=OFF \
+    -DGLFW_BUILD_TESTS=OFF \
+    -DGLFW_BUILD_DOCS=OFF
+cmake_build glfw
+
+## vtk
+git_clone_pull vtk \
+    https://gitlab.kitware.com/vtk/vtk.git
+git checkout -b v8.2.0 8.2.0
+link_dependencies static
+cmake_configure vtk -DBUILD_SHARED_LIBS=OFF \
+    -DVTK_BUILD_TESTING=OFF
+cmake_build vtk
+cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
+rm -rf $LIB_DIR_TMP
+link_dependencies dynamic
+cmake_configure vtk -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF
+cmake_build vtk
+cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
+rm -rf $LIB_DIR_TMP
+
+# libarchive
+linking dependencies statically is the whole point
 git_clone_pull libarchive \
     https://github.com/libarchive/libarchive.git
 link_dependencies static # static linking of dependencies
@@ -553,8 +692,9 @@ link_dependencies dynamic
 cmake_configure tesseract -DBUILD_SHARED_LIBS=ON \
     -DBUILD_TRAINING_TOOLS=OFF \
     -DSW_BUILD=OFF \
-    -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+    -DLeptonica_DIR=$BUILD_DIR/leptonica \
     -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive
+cp $LIB_DIR_TMP/tiff.lib $BUILD_DIR/tesseract/ # workaround comfig error
 cmake_build tesseract
 cp $LIB_DIR_TMP/tesseract* $LIB_DIR_OUT-dynamic/
 mkdir -p $LIB_DIR_OUT-dynamic/pkgconfig/
@@ -572,7 +712,7 @@ rm -rf $LIB_DIR_TMP
 git_clone_pull opencv_contrib \
     https://github.com/opencv/opencv_contrib.git origin/master
 
-## opencv
+# opencv
 git_clone_pull opencv \
     https://github.com/opencv/opencv.git origin/master
 link_dependencies dynamic
@@ -602,11 +742,13 @@ cmake_configure opencv -DBUILD_SHARED_LIBS=ON \
     -DTesseract_LIBRARY=$LIB_TESS \
     -DTesseract_INCLUDE_DIRS=$INSTALL_DIR/include \
     -DTesseract_LIBRARIES=$LIB_TESS\;$LIB_LEPT \
+    -DPYTHON3_EXECUTABLE=$PYTHON3/python \
     -DOPENCV_EXTRA_MODULES_PATH=$SRC_DIR/opencv_contrib/modules \
     -DBUILD_PERF_TESTS:BOOL=OFF \
     -DBUILD_TESTS:BOOL=OFF \
     -DBUILD_DOCS:BOOL=OFF \
-    -DWITH_CUDA:BOOL=OFF
+    -DWITH_CUDA:BOOL=OFF \
+    -DEXECUTABLE_OUTPUT_PATH=$INSTALL_DIR/bin
 cmake_build opencv
 
 mkdir -p $LIB_DIR_OUT-dynamic/cmake/opencv

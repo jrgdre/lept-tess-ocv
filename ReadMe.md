@@ -5,17 +5,20 @@ This project aims to:
 1.	build an Open Computer Vision library under MS-Windows, that supports the
 	OCRTesseract API.
 
-2.	Have one build script, that:
+2.	Have one build script, that performes the following steps:
 
-	-	first pulls (clone or update) all the dependencies from there Source
+	-	pull (clone or update) all the dependencies from there Source
 		Code Versioning systems (like GitHub);
 
-	-	compiles the different packages;
+	-	check out the latest known working stable release of each package;
 
-	-	create a `lib` directory for static linking applications;
+	-	compile the packages, in order of dependency;
 
-	-	create a `install` directory with the binaries needed for dynamic
-		linking applications
+	-	create two `lib` directories, one for static linking applications, one
+		for dynamic linking applications;
+
+	-	create a `bin` directory with the binaries needed for dynamic linking
+		applications and the applications created by the packages
 
 3.	Support different compilers:
 
@@ -34,3 +37,15 @@ This project aims to:
 -	a working c/c++ compiler environment
 -	nasm
 -  	pkg-config
+
+## Usage
+
+###  MS-Windows OS / MSVC:
+
+1. open Developer Command Prompt for VS
+
+2. start a Bash-Shell in the command prompt
+
+These two steps make sure all the environment variables are set right.
+
+3. run this script from where you stored it

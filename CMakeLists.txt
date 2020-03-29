@@ -22,3 +22,6 @@ file( WRITE ./.tmp/__BUILD_OS_RELEASE           ${OS_RELEASE}                  )
 file( WRITE ./.tmp/__BUILD_OS_PLATFORM          ${OS_PLATFORM}                 )
 file( WRITE ./.tmp/__BUILD_CXX_COMPILER_ID      ${CMAKE_CXX_COMPILER_ID}       )
 file( WRITE ./.tmp/__BUILD_CXX_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION}  )
+
+find_path( GL_INCLUDE_DIR NAMES gl/GL.h PATH $ENV{INCLUDE} )
+file( WRITE ./.tmp/__GL_INCLUDE_DIR ${GL_INCLUDE_DIR} )
