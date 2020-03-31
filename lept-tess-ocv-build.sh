@@ -189,6 +189,17 @@ fi
 ##  functions
 ## ===========
 
+# make pushd shut up
+# from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
+pushd () {
+    command pushd "$@" > /dev/null
+}
+# make popd shut up
+# from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
+popd () {
+    command popd "$@" > /dev/null
+}
+
 # Build a project that supports CMake
 # $1 project name
 cmake_build() {
