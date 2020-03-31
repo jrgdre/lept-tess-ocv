@@ -237,26 +237,69 @@ cmake_configure() {
     cd $REPO_DIR
 }
 
+# Switches to a given branch
+# If the branch does not yet exist, create it based on the ref given.
+# $1 project name
+# $2 branch to switch to
+# $3 ref to base the branch on (e.g. tag or commit), optional, create only
+git_branch() {
+    local project=$1
+    local branch=$2
+    local ref=$3
+    # define default values
+    if [  -z $ref  ]; then
+        ref=$branch
+    fi
+    # branch
+    pushd $SRC_DIR/$project
+    set -e; # don't exit script, if the branch can't be found by `git show-ref`
+        `git show-ref --quiet --verify "refs/heads/$branch"` && true
+    if [  $? == 1  ]; then              # branch dosn't exist yet
+        git switch -c $branch $ref      # create and switch
+    else
+        git switch $branch
+    fi
+    popd
+}
 # Clone or pull a repository
 # $1 project name
-# $2 web address to pull from
-# $3 hash of the commit to use (optional)
+# $2 remote reporsitory to pull
+# $3 branch to pull (optional)
+# $4 ref to checkout (optional)
+# $5 branch to create and switch to (optional)
 git_clone_pull() {
-    if [  ! -d "$SRC_DIR/$1"  ]; then
-        mkdir -p $BUILD_DIR/$1
-        cd $SRC_DIR
-        git clone $2
+    local project=$1
+    local repo=$2
+    local pull_branch=$3
+    local ref=$4
+    local target=$5
+    # define default values
+    if [  -z $pull_branch  ]; then
+        pull_branch='master'
+    fi
+    if [  ! -z $ref  ]; then
+        if [  -z $target  ]; then
+            target=$ref
+        fi
+    fi
+    # clone / pull
+    if [  ! -d "$SRC_DIR/$project"  ]; then
+        mkdir -p $BUILD_DIR/$project
+        pushd $SRC_DIR
+        git clone $repo
     else
-        echo "pulling $1"
-        cd $SRC_DIR/$1
+        echo "pulling $project"
+        pushd $SRC_DIR/$project
+        if [  ! -z $pull_branch  ]; then
+            git switch "$pull_branch"
+        fi
         git pull
     fi
-    # in case we need a specific commit for the build to work
-    if [  ! -z "$3"  ]; then
-        cd $SRC_DIR/$1
-        git reset --hard $3
+    popd
+    # branch for tag
+    if [  ! -z $ref  ]; then
+        git_branch $project $target $ref
     fi
-    cd $REPO_DIR
 }
 
 # Set the lib dir for static or dynamic linking of dependencies
