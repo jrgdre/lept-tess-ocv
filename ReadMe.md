@@ -42,10 +42,16 @@ This project aims to:
 
 ###  MS-Windows OS / MSVC:
 
-1. open Developer Command Prompt for VS
+We provide a simple MSW batch script, that helps to set-up the correct
+environment.
 
-2. start a Bash-Shell in the command prompt
+For it to work you have to set the VCVARS_DIR environment variable to point to
+directory your `vcvarsall.bat` lives.
+
+1. open a Windows Command Prompt (cmd or PowerShell)
+
+2. run `msw-x64-setup.bat`
 
 These two steps make sure all the environment variables are set right.
 
-3. run this script from where you stored it
+3. run `lept-tess-ocv-build.sh` from where you stored it

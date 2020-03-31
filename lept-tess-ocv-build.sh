@@ -14,11 +14,7 @@
 #     python 3 binary
 #
 # usage:
-#   - MS-Windows OS / MSVC:
-#       1. open Developer Command Prompt for VS
-#       2. start a Bash-Shell in the command prompt
-#       These two steps make sure all the environment variables are set right.
-#       3. run this script from where you stored it
+#   s. ReadMe.md
 #
 # (c)2020 Medical Data Solutions GmbH
 # License: MIT (s. License.md)
@@ -63,7 +59,6 @@ CXX_COMPILER_VERSION=`cat __BUILD_CXX_COMPILER_VERSION`
 OS=`cat __BUILD_OS`
 OS_PLATFORM=`cat __BUILD_OS_PLATFORM`
 OS_RELEASE=`cat __BUILD_OS_RELEASE`
-GL_INCLUDE_DIR=`cat __GL_INCLUDE_DIR`
 cd ..
 rm -rf ./.tmp
 
@@ -149,7 +144,6 @@ done
 # echo $OS_RELEASE
 # echo $CXX_COMPILER_ID
 # echo $CXX_COMPILER_VERSION
-# echo $GL_INCLUDE_DIR
 
 # define common directories
 REPO_DIR=$(pwd)
