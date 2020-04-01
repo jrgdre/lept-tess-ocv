@@ -148,7 +148,7 @@ done
 # echo $CXX_COMPILER_ID
 # echo $CXX_COMPILER_VERSION
 
-# define common directories
+## define common directories
 REPO_DIR=$(pwd)
 SRC_DIR=$REPO_DIR/src
 OUT_DIR=$REPO_DIR
@@ -166,21 +166,18 @@ if [  ! -z $BUILD_TYPE  ]; then
 fi
 BUILD_DIR=$OUT_DIR/build
 INSTALL_DIR=$OUT_DIR/install
-LIB_DIR_TMP=$INSTALL_DIR/lib # library directory during build (ln -s)
-# output directory for libraries base name (without "-static"|"-dynamic")
-if [  ! -z $CXX_COMPILER_ID ]; then
-    LIB_DIR_OUT=$INSTALL_DIR/$CXX_COMPILER_ID-lib
-else
-    LIB_DIR_OUT=$INSTALL_DIR/lib
-fi
+BIN_INSTALL_DIR=$INSTALL_DIR/bin
+INC_INSTALL_DIR=$INSTALL_DIR/include
+LIB_INSTALL_DIR=$INSTALL_DIR/lib
 
-# # debug print values of defined directories
-# echo $REPO_DIR
-# echo $SRC_DIR
-# echo $BUILD_DIR
-# echo $INSTALL_DIR
-# echo $LIB_DIR_TMP
-# echo $LIB_DIR_OUT
+## print values of defined directories
+# echo $REPO_DIR # debug only
+echo "using source directories in  $SRC_DIR"
+echo "writing build directories to $BUILD_DIR"
+# echo "installing to $INSTALL_DIR" # debug only
+echo "installing binaries to       $BIN_INSTALL_DIR"
+echo "installing includes to       $INC_INSTALL_DIR"
+echo "installing libraries to      $LIB_INSTALL_DIR"
 
 ## ===========
 ##  functions
@@ -207,12 +204,12 @@ cmake_build() {
     cd $REPO_DIR
 }
 
-# Configure a project that supports CMake
+## Configure a project that supports CMake
 # $1 project name
 cmake_configure() {
     local project=$1
     mkdir -p $BUILD_DIR/$project
-    local PREFIX_PATHS="$SRC_DIR/$project;$BUILD_DIR/$project;$INSTALL_DIR;$LIB_DIR_TMP"
+    local PREFIX_PATHS="$SRC_DIR/$project;$BUILD_DIR/$project;$INSTALL_DIR;$LIB_INSTALL_DIR"
     echo "-- CMAKE_PREFIX_PATH=$PREFIX_PATHS"
     local MODULE_PATHS="$REPO_DIR/cmake" # run our own FindXXX cmakes first
     echo "-- CMAKE_MODULE_PATHS=$MODULE_PATHS"
@@ -305,27 +302,28 @@ git_clone_pull() {
     fi
 }
 
-# Set the lib dir for static or dynamic linking of dependencies
-# This does not influence if the target is build as a static or dynamic link
-# library, only if the target itself links it's own dependencies statically or
-# as dynamic link libaries.
-# $1 link type override ("static"|"dynamic"), static linking if omitted
-link_dependencies() {
-    local link_type=static # default link type
-    if [  ! -z $1  ]; then
-        link_type=$1 # function parameter override
-    fi
-    rm -rf $LIB_DIR_TMP
-    echo "linking agains $LIB_DIR_OUT-$link_type"
-    ln -s $LIB_DIR_OUT-$link_type $LIB_DIR_TMP
-}
+# # Set the lib dir for static or dynamic linking of dependencies
+# # This does not influence if the target is build as a static or dynamic link
+# # library, only if the target itself links it's own dependencies statically or
+# # as dynamic link libaries.
+# # $1 link type override ("static"|"dynamic"), static linking if omitted
+# link_dependencies() {
+#     local link_type=static # default link type
+#     if [  ! -z $1  ]; then
+#         link_type=$1 # function parameter override
+#     fi
+#     rm -rf $LIB_DIR_TMP
+#     echo "linking agains $LIB_DIR_OUT-$link_type"
+#     ln -s $LIB_DIR_OUT-$link_type $LIB_DIR_TMP
+# }
 
 ## ============================
 ##  setup build directory tree
 ## ============================
 
+## clean-up old build and install files
 if [  $CLEAN_BUILD = true  ]; then
-    echo "cleaning up intermediate files"
+    echo "cleaning up old files"
     if [ $OUT_DIR != $REPO_DIR ]; then
         rm -rf $OUT_DIR
     else
@@ -334,18 +332,24 @@ if [  $CLEAN_BUILD = true  ]; then
     fi
 fi
 
-# create common directories
+## create common directories
 if [  ! -d "$REPO_DIR/src"  ]; then
 	mkdir -p "src"
+fi
+if [  ! -d "$BUILD_DIR"  ]; then
+	mkdir -p "$BUILD_DIR"
 fi
 if [  ! -d "$INSTALL_DIR"  ]; then
 	mkdir -p "$INSTALL_DIR"
 fi
-if [  ! -d "$LIB_DIR-dynamic"  ]; then
-    mkdir -p "$LIB_DIR_OUT-dynamic"
+if [  ! -d "$BIN_INSTALL_DIR"  ]; then
+    mkdir -p "$BIN_INSTALL_DIR"
 fi
-if [  ! -d "$LIB_DIR-static"  ]; then
-    mkdir -p "$LIB_DIR_OUT-static"
+if [  ! -d "$INC_INSTALL_DIR"  ]; then
+    mkdir -p "$INC_INSTALL_DIR"
+fi
+if [  ! -d "$LIB_INSTALL_DIR"  ]; then
+    mkdir -p "$LIB_INSTALL_DIR"
 fi
 
 ## =====================
