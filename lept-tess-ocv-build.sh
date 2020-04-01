@@ -212,7 +212,7 @@ cmake_configure() {
     mkdir -p $BUILD_DIR/$project
     local PREFIX_PATHS="$SRC_DIR/$project;$BUILD_DIR/$project;$INSTALL_DIR;$LIB_INSTALL_DIR"
     echo "-- CMAKE_PREFIX_PATH=$PREFIX_PATHS"
-    local MODULE_PATHS="$REPO_DIR/cmake;$INSTALL_DIR/cmake" # run custom cmakes first
+    local MODULE_PATHS="$REPO_DIR/cmake;$INSTALL_DIR/cmake;$LIB_INSTALL_DIR/cmake" # run custom cmakes first
     echo "-- CMAKE_MODULE_PATHS=$MODULE_PATHS"
     pushd $BUILD_DIR/$project
     if [  ! -z $GENERATOR  ]; then
