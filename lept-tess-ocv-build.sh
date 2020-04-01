@@ -212,28 +212,28 @@ cmake_configure() {
     mkdir -p $BUILD_DIR/$project
     local PREFIX_PATHS="$SRC_DIR/$project;$BUILD_DIR/$project;$INSTALL_DIR;$LIB_INSTALL_DIR"
     echo "-- CMAKE_PREFIX_PATH=$PREFIX_PATHS"
-    local MODULE_PATHS="$REPO_DIR/cmake" # run our own FindXXX cmakes first
+    local MODULE_PATHS="$REPO_DIR/cmake;$INSTALL_DIR/cmake" # run custom cmakes first
     echo "-- CMAKE_MODULE_PATHS=$MODULE_PATHS"
     pushd $BUILD_DIR/$project
     if [  ! -z $GENERATOR  ]; then
         cmake $SRC_DIR/$project \
             -G "$GENERATOR" \
-            -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive \
             -DCMAKE_MODULE_PATH=$MODULE_PATHS \
             -DCMAKE_PREFIX_PATH=$PREFIX_PATHS \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
             -Wno-derecated \
             $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} \
             ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27}
+            # -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive \
     else
         cmake $SRC_DIR/$project \
-            -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive \
             -DCMAKE_MODULE_PATH=$MODULE_PATHS \
             -DCMAKE_PREFIX_PATH=$PREFIX_PATHS \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
             -Wno-derecated \
             $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} \
             ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27}
+            # -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive \
     fi
     popd
 }
