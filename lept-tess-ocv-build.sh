@@ -238,70 +238,31 @@ cmake_configure() {
     popd
 }
 
-## Switches to a given branch
-# If the branch does not yet exist, create it based on the ref given.
-# $1 project name
-# $2 ref to base the branch on (e.g. tag or commit), optional, create only
-# $3 branch to switch to
-git_branch() {
-    local project=$1
-    local ref=$2
-    local branch=$3
-    # define default values
-    if [ -z $branch ]; then
-        $branch=$ref
-    fi
-    # branch
-    pushd $SRC_DIR/$project
-    set -e; # don't exit script, if the branch can't be found by `git show-ref`
-        `git show-ref --quiet --verify "refs/heads/$branch"` && true
-    if [  $? == 1  ]; then              # branch dosn't exist yet
-        git switch -c $branch $ref      # create and switch
-    else
-        git switch $branch
-    fi
-    popd
-}
-
 ## Clone or pull a repository
 # $1 project name
 # $2 remote reporsitory to pull
-# $3 branch to pull (optional)
-# $4 ref to checkout (optional)
-# $5 branch to create and switch to (optional)
+# $3 ref to switch to (optional)
 git_clone_pull() {
     local project=$1
     local repo=$2
-    local pull_branch=$3
-    local ref=$4
-    local target=$5
-    # define default values
-    if [  -z $pull_branch  ]; then
-        pull_branch='master'
-    fi
-    if [  ! -z $ref  ]; then
-        if [  -z $target  ]; then
-            target=$ref
+    local ref=$3
+    pushd $SRC_DIR
+        # clone / pull
+        if [ ! -d "$project" ]; then
+            git clone $repo
+        else
+            pushd $SRC_DIR/$project
+                echo "pulling $project"
+                git pull $repo
+            popd
         fi
-    fi
-    # clone / pull
-    if [  ! -d "$SRC_DIR/$project"  ]; then
-        mkdir -p $BUILD_DIR/$project
-        pushd $SRC_DIR
-        git clone $repo
-    else
-        echo "pulling $project"
-        pushd $SRC_DIR/$project
-        if [  ! -z $pull_branch  ]; then
-            git switch "$pull_branch"
+        # switch to a specific commit, if specified
+        if [ ! -z $ref ]; then
+            pushd $SRC_DIR/$project
+                git switch --detach $ref
+            popd
         fi
-        git pull
-    fi
     popd
-    # branch for tag
-    if [  ! -z $ref  ]; then
-        git_branch $project $target $ref
-    fi
 }
 
 # # Set the lib dir for static or dynamic linking of dependencies
