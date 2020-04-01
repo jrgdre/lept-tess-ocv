@@ -183,18 +183,19 @@ echo "installing libraries to      $LIB_INSTALL_DIR"
 ##  functions
 ## ===========
 
-# make pushd shut up
+## make pushd shut up
 # from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
 pushd () {
     command pushd "$@" > /dev/null
 }
-# make popd shut up
+
+## make popd shut up
 # from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
 popd () {
     command popd "$@" > /dev/null
 }
 
-# Build a project that supports CMake
+## Build a project that supports CMake
 # $1 project name
 cmake_build() {
     cd $BUILD_DIR/$1
@@ -237,7 +238,7 @@ cmake_configure() {
     popd
 }
 
-# Switches to a given branch
+## Switches to a given branch
 # If the branch does not yet exist, create it based on the ref given.
 # $1 project name
 # $2 branch to switch to
@@ -261,7 +262,8 @@ git_branch() {
     fi
     popd
 }
-# Clone or pull a repository
+
+## Clone or pull a repository
 # $1 project name
 # $2 remote reporsitory to pull
 # $3 branch to pull (optional)
