@@ -50,6 +50,7 @@ CLEAN_BUILD=false
 ARCH=""
 
 # find out what we are building on and with
+echo "running the environment check ..."
 mkdir -p ./.tmp
 cd ./.tmp
 cmake ..
@@ -60,7 +61,9 @@ OS=`cat __BUILD_OS`
 OS_PLATFORM=`cat __BUILD_OS_PLATFORM`
 OS_RELEASE=`cat __BUILD_OS_RELEASE`
 cd ..
+echo "cleaning-up ./.tmp"
 rm -rf ./.tmp
+echo "done checking the environment"
 
 # parse the command line arguments for the script
 while [ ! -z $# ]; do
@@ -137,7 +140,7 @@ while [ ! -z $# ]; do
     esac
 done
 
-# # debug print values of defined parameters
+# ## debug print values of defined parameters
 # echo $CPU
 # echo $OS
 # echo $OS_PLATFORM
