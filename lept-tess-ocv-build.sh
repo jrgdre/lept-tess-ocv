@@ -241,15 +241,15 @@ cmake_configure() {
 ## Switches to a given branch
 # If the branch does not yet exist, create it based on the ref given.
 # $1 project name
-# $2 branch to switch to
-# $3 ref to base the branch on (e.g. tag or commit), optional, create only
+# $2 ref to base the branch on (e.g. tag or commit), optional, create only
+# $3 branch to switch to
 git_branch() {
     local project=$1
-    local branch=$2
-    local ref=$3
+    local ref=$2
+    local branch=$3
     # define default values
-    if [  -z $ref  ]; then
-        ref=$branch
+    if [ -z $branch ]; then
+        $branch=$ref
     fi
     # branch
     pushd $SRC_DIR/$project
