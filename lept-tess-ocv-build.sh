@@ -265,21 +265,6 @@ git_clone_pull() {
     popd
 }
 
-# # Set the lib dir for static or dynamic linking of dependencies
-# # This does not influence if the target is build as a static or dynamic link
-# # library, only if the target itself links it's own dependencies statically or
-# # as dynamic link libaries.
-# # $1 link type override ("static"|"dynamic"), static linking if omitted
-# link_dependencies() {
-#     local link_type=static # default link type
-#     if [  ! -z $1  ]; then
-#         link_type=$1 # function parameter override
-#     fi
-#     rm -rf $LIB_DIR_TMP
-#     echo "linking agains $LIB_DIR_OUT-$link_type"
-#     ln -s $LIB_DIR_OUT-$link_type $LIB_DIR_TMP
-# }
-
 ## ============================
 ##  setup build directory tree
 ## ============================
