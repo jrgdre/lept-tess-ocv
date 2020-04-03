@@ -241,15 +241,17 @@ cmake_configure() {
 ## Clone or pull a repository
 # $1 project name
 # $2 remote reporsitory to pull
-# $3 ref to switch to (optional)
+# $3 branch to pull
+# $4 ref to switch to (optional)
 git_clone_pull() {
     local project=$1
     local repo=$2
-    local ref=$3
+    local branch=$3
+    local ref=$4
     pushd $SRC_DIR
         # clone / pull
         if [ ! -d "$project" ]; then
-            git clone $repo
+            git clone $repo --branch $branch
         else
             pushd $SRC_DIR/$project
                 echo "pulling $project"
