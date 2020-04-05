@@ -69,13 +69,13 @@ rm -rf ./.tmp
 echo "done checking the environment"
 
 # parse the command line arguments for the script
-while [ ! -z $# ]; do
-    case "$1" in
+while [ ! -z ${#} ]; do
+    case "${1}" in
         -h|--help)
             echo "Leptonica, Tesseract, OpenCV build script"
             echo "(c)2020 Medical Data Solutions GmbH, MIT license"
             echo " "
-            echo "$SCRIPT_NAME [options]"
+            echo "${SCRIPT_NAME} [options]"
             echo " "
             echo "options:"
             echo "-h, --help                        show this brief help"
@@ -91,8 +91,8 @@ while [ ! -z $# ]; do
             ;;
         -a|--arch)
             shift
-            if [ ! -z $# ]; then
-                ARCH=$1
+            if [ ! -z ${#} ]; then
+                ARCH=${1}
             else
                 echo "no architecture specified, remove switch for default architecture"
             fi
@@ -100,8 +100,8 @@ while [ ! -z $# ]; do
             ;;
         -b|--build)
             shift
-            if [ ! -z $# ]; then
-                BUILD_TYPE=$1
+            if [ ! -z ${#} ]; then
+                BUILD_TYPE=${1}
             else
                 echo "no build-type specified"
             fi
@@ -114,8 +114,8 @@ while [ ! -z $# ]; do
         -g|--generator)
             shift
             if [ ! -z $# ]; then
-                echo "GENERATOR set to $1"
-                GENERATOR=$1
+                echo "GENERATOR set to ${1}"
+                GENERATOR=${1}
             else
                 echo "no generator specified, remove switch for platform default generator"
             fi
@@ -127,8 +127,8 @@ while [ ! -z $# ]; do
             ;;
         -o|--os)
             shift
-            if [ ! -z $# ]; then
-                OS=$1
+            if [ ! -z ${#} ]; then
+                OS=${1}
             else
                 echo "no operating system specified, remove switch to omit"
             fi
@@ -136,8 +136,8 @@ while [ ! -z $# ]; do
             ;;
         -p|--project)
             shift
-            if [ ! -z $# ]; then
-                PROJECT=$1
+            if [ ! -z ${#} ]; then
+                PROJECT=${1}
             else
                 echo "no project name specified, remove switch to omit"
             fi
@@ -154,43 +154,43 @@ while [ ! -z $# ]; do
 done
 
 # ## debug print values of defined parameters
-# echo $CPU
-# echo $OS
-# echo $OS_PLATFORM
-# echo $OS_RELEASE
-# echo $CXX_COMPILER_ID
-# echo $CXX_COMPILER_VERSION
+# echo ${CPU}
+# echo ${OS}
+# echo ${OS_PLATFORM}
+# echo ${OS_RELEASE}
+# echo ${CXX_COMPILER_ID}
+# echo ${CXX_COMPILER_VERSION}
 
 ## define common directories
 REPO_DIR=$(pwd)
-SRC_DIR=$REPO_DIR/src
-OUT_DIR=$REPO_DIR
-if [  ! -z $OS  ]; then
-    OUT_DIR=$OUT_DIR/$OS
+SRC_DIR=${REPO_DIR}/src
+OUT_DIR=${REPO_DIR}
+if [  ! -z ${OS}  ]; then
+    OUT_DIR=${OUT_DIR}/${OS}
 fi
-if [  ! -z $PROJECT  ]; then
-    OUT_DIR=$OUT_DIR-$PROJECT
+if [  ! -z ${PROJECT}  ]; then
+    OUT_DIR=${OUT_DIR}-${PROJECT}
 fi
-if [  ! -z $CPU  ]; then
-    OUT_DIR=$OUT_DIR-$CPU
+if [  ! -z ${CPU}  ]; then
+    OUT_DIR=${OUT_DIR}-${CPU}
 fi
-if [  ! -z $BUILD_TYPE  ]; then
-    OUT_DIR=$OUT_DIR-$BUILD_TYPE
+if [  ! -z ${BUILD_TYPE}  ]; then
+    OUT_DIR=${OUT_DIR}-${BUILD_TYPE}
 fi
-BUILD_DIR=$OUT_DIR/build
-INSTALL_DIR=$OUT_DIR/install
-BIN_INSTALL_DIR=$INSTALL_DIR/bin
-INC_INSTALL_DIR=$INSTALL_DIR/include
-LIB_INSTALL_DIR=$INSTALL_DIR/lib
+BUILD_DIR=${OUT_DIR}/build
+INSTALL_DIR=${OUT_DIR}/install
+BIN_INSTALL_DIR=${INSTALL_DIR}/bin
+INC_INSTALL_DIR=${INSTALL_DIR}/include
+LIB_INSTALL_DIR=${INSTALL_DIR}/lib
 
 ## print values of defined directories
-# echo $REPO_DIR # debug only
-echo "using source directories in  $SRC_DIR"
-echo "writing build directories to $BUILD_DIR"
-# echo "installing to $INSTALL_DIR" # debug only
-echo "installing binaries to       $BIN_INSTALL_DIR"
-echo "installing includes to       $INC_INSTALL_DIR"
-echo "installing libraries to      $LIB_INSTALL_DIR"
+# echo ${REPO_DIR} # debug only
+echo "using source directories in  ${SRC_DIR}"
+echo "writing build directories to ${BUILD_DIR}"
+# echo "installing to ${INSTALL_DIR}" # debug only
+echo "installing binaries to       ${BIN_INSTALL_DIR}"
+echo "installing includes to       ${INC_INSTALL_DIR}"
+echo "installing libraries to      ${LIB_INSTALL_DIR}"
 
 ## ===========
 ##  functions
@@ -199,13 +199,13 @@ echo "installing libraries to      $LIB_INSTALL_DIR"
 ## make pushd shut up
 # from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
 pushd () {
-    command pushd "$@" > /dev/null
+    command pushd "${@}" > /dev/null
 }
 
 ## make popd shut up
 # from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
 popd () {
-    command popd "$@" > /dev/null
+    command popd "${@}" > /dev/null
 }
 
 ## Build a project that supports CMake
@@ -215,10 +215,10 @@ cmake_build() {
     echo " "
     echo "building ${project} in ${BUILD_DIR}/${project}"
     echo " "
-    pushd ${BUILD_DIR}/$1
-    cmake --build ${BUILD_DIR}/${project} \
-          --config ${BUILD_TYPE} \
-          --target install
+    pushd ${BUILD_DIR}/${project}
+        cmake --build ${BUILD_DIR}/${project} \
+            --config ${BUILD_TYPE} \
+            --target install
     popd
 }
 
@@ -379,23 +379,23 @@ if [  ${INITIAL_BUILD} = true  ]; then
 fi
 
 ## create common directories
-if [  ! -d "$REPO_DIR/src"  ]; then
+if [  ! -d "${REPO_DIR}/src"  ]; then
 	mkdir -p "src"
 fi
-if [  ! -d "$BUILD_DIR"  ]; then
-	mkdir -p "$BUILD_DIR"
+if [  ! -d "${BUILD_DIR}"  ]; then
+	mkdir -p "${BUILD_DIR}"
 fi
-if [  ! -d "$INSTALL_DIR"  ]; then
-	mkdir -p "$INSTALL_DIR"
+if [  ! -d "${INSTALL_DIR}"  ]; then
+	mkdir -p "${INSTALL_DIR}"
 fi
-if [  ! -d "$BIN_INSTALL_DIR"  ]; then
-    mkdir -p "$BIN_INSTALL_DIR"
+if [  ! -d "${BIN_INSTALL_DIR}"  ]; then
+    mkdir -p "${BIN_INSTALL_DIR}"
 fi
-if [  ! -d "$INC_INSTALL_DIR"  ]; then
-    mkdir -p "$INC_INSTALL_DIR"
+if [  ! -d "${INC_INSTALL_DIR}"  ]; then
+    mkdir -p "${INC_INSTALL_DIR}"
 fi
-if [  ! -d "$LIB_INSTALL_DIR"  ]; then
-    mkdir -p "$LIB_INSTALL_DIR"
+if [  ! -d "${LIB_INSTALL_DIR}"  ]; then
+    mkdir -p "${LIB_INSTALL_DIR}"
 fi
 
 ## =====================
