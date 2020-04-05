@@ -295,7 +295,9 @@ cmake_params_get() {
         "-DCMAKE_MODULE_PATH=${module_paths} " \
         "-DCMAKE_PREFIX_PATH=${prefix_paths} " \
         "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} " \
-        "-Wno-deprecated "
+        "-DCMAKE_EXE_LINKER_FLAGS='/NODEFAULTLIB:LIBCMT'"
+        "-Wno-deprecated " \
+        "-Wno-dev" \
     )
     if [ ! -z ${2} ]; then
         # extract the additional parameters, from the named array
