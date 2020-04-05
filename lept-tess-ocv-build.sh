@@ -207,35 +207,48 @@ cmake_build() {
 
 ## Configure a project that supports CMake
 # $1 project name
+# $2[] array of additional parameters
 cmake_configure() {
-    local project=$1
-    mkdir -p $BUILD_DIR/$project
-    local PREFIX_PATHS="$SRC_DIR/$project;$BUILD_DIR/$project;$INSTALL_DIR;$LIB_INSTALL_DIR"
-    echo "-- CMAKE_PREFIX_PATH=$PREFIX_PATHS"
-    local MODULE_PATHS="$REPO_DIR/cmake;$INSTALL_DIR/cmake;$LIB_INSTALL_DIR/cmake" # run custom cmakes first
-    echo "-- CMAKE_MODULE_PATHS=$MODULE_PATHS"
-    pushd $BUILD_DIR/$project
-    if [  ! -z $GENERATOR  ]; then
-        cmake $SRC_DIR/$project \
-            -G "$GENERATOR" \
-            -DCMAKE_MODULE_PATH=$MODULE_PATHS \
-            -DCMAKE_PREFIX_PATH=$PREFIX_PATHS \
-            -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-            -Wno-derecated \
-            $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} \
-            ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27}
-            # -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive \
+    local project=${1}
+    if [ ! -z ${2} ]; then
+        # extract the additional parameters, from the named array
+        local name=$2[@]
+        local arg_list=("${!name}")
+        local args=${arg_list[@]}
     else
-        cmake $SRC_DIR/$project \
-            -DCMAKE_MODULE_PATH=$MODULE_PATHS \
-            -DCMAKE_PREFIX_PATH=$PREFIX_PATHS \
-            -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-            -Wno-derecated \
-            $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} \
-            ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27}
-            # -DCMAKE_MODULE_LINKER_FLAGS=-whole-archive \
+        local args=
+    fi
+    mkdir -p ${BUILD_DIR}/${project}
+    local PREFIX_PATHS="${SRC_DIR}/${project};${BUILD_DIR}/${project};${INSTALL_DIR};${LIB_INSTALL_DIR}"
+    echo "-- CMAKE_PREFIX_PATH=${PREFIX_PATHS}"
+    local MODULE_PATHS="${REPO_DIR}/cmake;${INSTALL_DIR}/cmake;${LIB_INSTALL_DIR}/cmake" # run custom cmakes first
+    echo "-- CMAKE_MODULE_PATHS=${MODULE_PATHS}"
+    replace_cmake_version ${project}
+    pushd ${BUILD_DIR}/${project}
+    if [  ! -z ${GENERATOR}  ]; then
+        cmake ${SRC_DIR}/${project} \
+            -G "${GENERATOR}" \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY='MultiThreaded' \
+            -DCMAKE_C_FLAGS='-MP' \
+            -DCMAKE_C_CREATE_STATIC_LIBRARY=ON \
+            -DCMAKE_CXX_FLAGS='-MP' \
+            -DCMAKE_CXX_CREATE_STATIC_LIBRARY=ON \
+            -DCMAKE_MODULE_PATH=${MODULE_PATHS} \
+            -DCMAKE_PREFIX_PATH=${PREFIX_PATHS} \
+            -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+            ${args} -Wno-deprecated
+    else
+        cmake ${SRC_DIR}/${project} \
+            -DCMAKE_MSVC_RUNTIME_LIBRARY='MultiThreaded' \
+            -DCMAKE_C_FLAGS='-MP' \
+            -DCMAKE_CXX_FLAGS='-MP' \
+            -DCMAKE_MODULE_PATH=${MODULE_PATHS} \
+            -DCMAKE_PREFIX_PATH=${PREFIX_PATHS} \
+            -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+            ${args} -Wno-deprecated
     fi
     popd
+    restore_CMakeLists $project
 }
 
 ## Clone or pull a repository
