@@ -259,10 +259,10 @@ cmake_configure() {
         name=$3[@]
         arg_list=("${!name}")
     fi
-    cmake_params_get "${project}" arg_list # set CMAKE_PARAMS
     echo " "
     echo "configuring ${project} in ${src}"
     echo " "
+    cmake_params_get "${project}" arg_list # set CMAKE_PARAMS
     mkdir -p ${BUILD_DIR}/${project}
     replace_cmake_version ${src} # inject cmake_minimum_required(VERSION ...
     pushd ${BUILD_DIR}/${project}
@@ -326,6 +326,9 @@ git_clone_pull() {
     local repo=${2}
     local branch=${3}
     local ref=${4}
+    echo " "
+    echo "checking ${project} repository"
+    echo " "
     pushd ${SRC_DIR}
         # clone / pull
         if [ ! -d "${project}" ]; then
@@ -351,9 +354,11 @@ git_clone_pull() {
 ##  setup build directory tree
 ## ============================
 
-## clean-up old build and install files
+## clean-up build and install files
 if [  ${CLEAN_BUILD} = true  ]; then
-    echo "cleaning up old files"
+    echo " "
+    echo "cleaning up build and install files"
+    echo " "
     if [ ${OUT_DIR} != ${REPO_DIR} ]; then
         rm -rf ${OUT_DIR}
     else
@@ -364,7 +369,9 @@ fi
 
 ## clean-up all downloads, build and install files and start from scratch
 if [  ${INITIAL_BUILD} = true  ]; then
+    echo " "
     echo "cleaning up all source repositories, intermediate and install files"
+    echo " "
     if [ ${OUT_DIR} != ${REPO_DIR} ]; then
         rm -rf ${OUT_DIR}
     else
