@@ -47,6 +47,7 @@ PROJECT=""
 GENERATOR=""
 BUILD_TYPE=Release
 CLEAN_BUILD=false
+UPDATE_REPOS=false
 ARCH=""
 
 # find out what we are building on and with
@@ -83,6 +84,7 @@ while [ ! -z $# ]; do
             echo "-b, --build <CMAKE_BUILD_TYPE>    override the default CMAKE_BUILD_TYPE (Release)"
             echo "-c, --clean                       remove all intermediate files of a previous build before building"
             echo "-i, --initial                     remove all source and intermediate files and start from scratch"
+            echo "-u, --update                      pull / update all repositories"
             exit 0
             ;;
         -a|--arch)
@@ -137,6 +139,10 @@ while [ ! -z $# ]; do
             else
                 echo "no project name specified, remove switch to omit"
             fi
+            shift
+            ;;
+        -u|--update)
+            UPDATE_REPOS=true
             shift
             ;;
         *)
@@ -282,29 +288,36 @@ cmake_configure() {
 }
 
 ## Clone or pull a repository
+# Since we lock the repos to a specific commit, we assume that existing repos
+# are at this commit.
+# - We alway clone non-exiting repos.
+# - We only pull exiting repos, if UPDATE_REPOS is true.
+# params:
 # $1 project name
 # $2 remote reporsitory to pull
 # $3 branch to pull
 # $4 ref to switch to (optional)
 git_clone_pull() {
-    local project=$1
-    local repo=$2
-    local branch=$3
-    local ref=$4
-    pushd $SRC_DIR
+    local project=${1}
+    local repo=${2}
+    local branch=${3}
+    local ref=${4}
+    pushd ${SRC_DIR}
         # clone / pull
-        if [ ! -d "$project" ]; then
-            git clone $repo --branch $branch
+        if [ ! -d "${project}" ]; then
+            git clone ${repo} --branch ${branch}
         else
-            pushd $SRC_DIR/$project
-                echo "pulling $project"
-                git pull $repo
-            popd
+            if [ ${UPDATE_REPOS} = true ]; then
+                pushd ${SRC_DIR}/${project}
+                    echo "pulling ${project}"
+                    git pull ${repo}
+                popd
+            fi
         fi
         # switch to a specific commit, if specified
-        if [ ! -z $ref ]; then
-            pushd $SRC_DIR/$project
-                git switch --detach $ref
+        if [ ! -z ${ref} ]; then
+            pushd $SRC_DIR/${project}
+                git switch --detach ${ref}
             popd
         fi
     popd
@@ -367,181 +380,30 @@ fi
 ##  build prerequisites
 ## =====================
 
+## zlib 1.2.11
+git_clone_pull "zlib" \
+    https://github.com/madler/zlib.git master \
+    cacf7f1d4e3d44d871b605da3b647f07d718623f
+cmake_configure "zlib" "${SRC_DIR}/zlib"
+cmake_build "zlib"
+# remove dynamic link libraries, CMake's FindZLIB otherwise makes the projects
+# downstream prefere dynamic linking
+rm -f ${BIN_INSTALL_DIR}/zlib.dll
+rm -f ${LIB_INSTALL_DIR}/zlib.lib
 
-## freeglut
-# no GIT repository, fetching a tar
-if [  ! -d $SRC_DIR/freeglut  ]; then
-    cd $SRC_DIR
-    wget -c --show-progress \
-        http://downloads.sourceforge.net/project/freeglut/freeglut/3.2.1/freeglut-3.2.1.tar.gz
-    tar -xzf freeglut-3.2.1.tar.gz
-    mv freeglut-3.2.1 freeglut
-fi
-# build static link libraries
-link_dependencies static
-cmake_configure freeglut \
-    -DFREEGLUT_BUILD_SHARED_LIBS=OFF \
-    -DFREEGLUT_BUILD_STATIC_LIBS=ON \
-    -DFREEGLUT_REPLACE_GLUT=OFF \
-    -DFREEGLUT_BUILD_DEMOS=OFF
-cmake_build freeglut
-mv -f $LIB_DIR_TMP/freeglut_static.lib $LIB_DIR_OUT-static/freeglut.lib
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
-# We also need to run the GLUT replacement version, since downstream some
-# packages expect glut.h
-cmake_configure freeglut \
-    -DFREEGLUT_BUILD_SHARED_LIBS=OFF \
-    -DFREEGLUT_BUILD_STATIC_LIBS=ON \
-    -DFREEGLUT_REPLACE_GLUT=ON \
-    -DFREEGLUT_BUILD_DEMOS=OFF
-cmake_build freeglut
-# We have to discard the glut.lib crated in this step, or CMake's FindGLUT.cmake
-# gets confused.
-# rm -rf $LIB_DIR_TMP
-rm -f $INSTALL_DIR/bin/glut.dll # we doon't need this one
-# build dynamic link libraries
-link_dependencies dynamic
-cmake_configure freeglut \
-    -DFREEGLUT_BUILD_SHARED_LIBS=ON \
-    -DFREEGLUT_BUILD_STATIC_LIBS=OFF \
-    -DFREEGLUT_REPLACE_GLUT=OFF \
-    -DFREEGLUT_BUILD_DEMOS=OFF
-cmake_build freeglut
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
-rm -rf $LIB_DIR_TMP
+## xz (lzma) 5.2.5
+git_clone_pull "xz" \
+    https://git.tukaani.org/xz.git master \
+    b8e12f5ab4c9fd3cb09a4330b2861f6b979ababd
+params=( -DBUILD_SHARED_LIBS=OFF )
+cmake_configure "xz" "${SRC_DIR}/xz" params
+cmake_build "xz"
+exit 0
 
-## zlib
-git_clone_pull zlib \
-    https://github.com/madler/zlib.git origin/master
-link_dependencies static
-cmake_configure zlib \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
-cmake_build zlib
-cp $LIB_DIR_TMP/zlib.lib $LIB_DIR_OUT-dynamic/zlib.lib
-cp $LIB_DIR_TMP/zlibstatic.lib $LIB_DIR_OUT-static/zlib.lib
-rm -rf $LIB_DIR_TMP
-
-## libpng
-git_clone_pull libpng \
-    https://github.com/glennrp/libpng.git origin/master
-link_dependencies static
-cmake_configure libpng \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
-    -DPNG_TESTS=OFF
-cmake_build libpng
-cp $LIB_DIR_TMP/libpng16.lib $LIB_DIR_OUT-dynamic/libpng16.lib
-cp $LIB_DIR_TMP/libpng16_static.lib $LIB_DIR_OUT-static/libpng16.lib
-cp -rf $LIB_DIR_TMP/libpng $LIB_DIR_OUT-dynamic/
-cp -rf $LIB_DIR_TMP/libpng $LIB_DIR_OUT-static/
-rm -rf $LIB_DIR_TMP
-
-## giflib
-# This package doesn't provide dynamic linking.
-# We copy the static link library to the -dynamic directory for convenience.
-# The build creates two directories in $LIB_DIR_TMP/cmake:
-# - `giflib`
-# - `<version number>`
-# The last one sucks, it has nothing that says: "This belongs to giflib" and it
-# can change.
-git_clone_pull giflib \
-    https://github.com/xbmc/giflib.git origin/master
-link_dependencies static
-cmake_configure giflib \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
-rm -rf $LIB_DIR_TMP/cmake # avoid polluting target dirs with wrong versions
-cmake_build giflib
-cp $LIB_DIR_TMP/giflib.lib $LIB_DIR_OUT-dynamic/giflib.lib
-cp $LIB_DIR_TMP/giflib.lib $LIB_DIR_OUT-static/giflib.lib
-cp -rf $LIB_DIR_TMP/cmake $LIB_DIR_OUT-dynamic/
-cp -rf $LIB_DIR_TMP/cmake $LIB_DIR_OUT-static/
-rm -rf $LIB_DIR_TMP
-
-## libjpeg-turbo
-git_clone_pull libjpeg-turbo \
-    https://github.com/libjpeg-turbo/libjpeg-turbo.git origin/master
-link_dependencies static
-cmake_configure libjpeg-turbo \
-    -DWITH_12BIT=ON
-cmake_build libjpeg-turbo
-cp $LIB_DIR_TMP/jpeg.lib $LIB_DIR_OUT-dynamic/jpeg.lib
-cp $LIB_DIR_TMP/jpeg-static.lib $LIB_DIR_OUT-static/jpeg.lib
-mkdir -p $LIB_DIR_OUT-dynamic/pkgconfig/
-cp -rf $LIB_DIR_TMP/pkgconfig/libjpeg.pc $LIB_DIR_OUT-dynamic/pkgconfig/
-cp -rf $LIB_DIR_TMP/pkgconfig/libturbojpeg.pc $LIB_DIR_OUT-dynamic/pkgconfig/
-mkdir -p $LIB_DIR_OUT-static/pkgconfig/
-cp -rf $LIB_DIR_TMP/pkgconfig/libjpeg.pc $LIB_DIR_OUT-static/pkgconfig/
-cp -rf $LIB_DIR_TMP/pkgconfig/libturbojpeg.pc $LIB_DIR_OUT-static/pkgconfig/
-rm -rf $LIB_DIR_TMP
-
-# openjpeg
-this one acknowledges BUILD_SHARED_LIBS
-we want static and dynamic libs, so we run cmake twice
-git_clone_pull openjpeg \
-    https://github.com/uclouvain/openjpeg.git origin/master
-link_dependencies static
-cmake_configure openjpeg -DBUILD_SHARED_LIBS=OFF \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
-    -DBUILD_THIRDPARTY=ON
-cmake_build openjpeg
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
-rm -rf $LIB_DIR_TMP
-link_dependencies dynamic
-cmake_configure openjpeg -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT" \
-    -DBUILD_THIRDPARTY=ON
-cmake_build openjpeg
-cp $LIB_DIR_TMP/openjp2.lib $LIB_DIR_OUT-dynamic/openjp2.lib
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
-rm -rf $LIB_DIR_TMP
-
-# jbigkit
-Under MSCV the libraries build seem to be the same, wether we select
-BUILD_SHARED_LIBS or not.
-Makes you wonder, if the dynamic linking really is a dynamic linking.
-Right now we roll with it.
-git_clone_pull jbigkit \
-    https://github.com/zdenop/jbigkit.git origin/master
-We always need to run both configurations or the dynamic library build fails
-with linker errors.
-link_dependencies static
-cmake_configure jbigkit -DBUILD_SHARED_LIBS=OFF \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
-cmake_build jbigkit
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
-rm -rf $LIB_DIR_TMP
-link_dependencies dynamic
-cmake_configure jbigkit -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
-cmake_build jbigkit
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
-rm -rf $LIB_DIR_TMP
-
-## lzma (xz)
-# This package currently has the problem of not providing a lib file under
-# MSVC, if you only build the shared lib.
-# The way it is currently build, the lib file in -static is the same as the
-# lib file in -dynamic.
-# That probably will cause problems later in one of the two build branches.
-# Right now we don't have a solution for this.
-git_clone_pull xz \
-    https://git.tukaani.org/xz.git origin/master
-# this one acknowledges BUILD_SHARED_LIBS
-# we want static and dynamic libs, so we run cmake twice
-link_dependencies static
-cmake_configure xz -DBUILD_SHARED_LIBS=OFF \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
-cmake_build xz
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-static/
-rm -rf $LIB_DIR_TMP
-cmake_configure xz -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_EXE_LINKER_FLAGS="/NODEFAULTLIB:LIBCMT"
-cmake_build xz
-cp -rf $LIB_DIR_TMP/* $LIB_DIR_OUT-dynamic/
-rm -rf $LIB_DIR_TMP
-
-## zstd
-git_clone_pull zstd \
-    https://github.com/facebook/zstd.git origin/master
+## zstd 1.4.4
+git_clone_pull "zstd" \
+    https://github.com/facebook/zstd.git master \
+    10f0e6993f9d2f682da6d04aa2385b7d53cbb4ee
 # This repository has a different layout.
 # So we need a custom configure handler here.
 mkdir -p $BUILD_DIR/zstd
