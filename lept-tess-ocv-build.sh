@@ -47,6 +47,8 @@ PROJECT=""
 GENERATOR=""
 BUILD_TYPE=Release
 CLEAN_BUILD=false
+CMAKE_PARAMS=""
+INITIAL_BUILD=false
 UPDATE_REPOS=false
 ARCH=""
 
@@ -210,9 +212,11 @@ popd () {
 # $1 project name
 cmake_build() {
     local project=${1}
+    echo " "
     echo "building ${project} in ${BUILD_DIR}/${project}"
+    echo " "
     pushd ${BUILD_DIR}/$1
-    cmake --build ${BUILD_DIR}/${project}
+    cmake --build ${BUILD_DIR}/${project} \
           --config ${BUILD_TYPE} \
           --target install
     popd
@@ -243,9 +247,54 @@ restore_CMakeLists(){
 
 ## Configure a project that supports CMake
 # $1 project name
-# $2[] array of additional parameters
+# $2 source directory
+# $3[] array of additional parameters
 cmake_configure() {
     local project=${1}
+    local src=${2}
+    local name=
+    local arg_list=
+    if [ ! -z ${3} ]; then
+        # extract the additional parameters, from the named array
+        name=$3[@]
+        arg_list=("${!name}")
+    fi
+    cmake_params_get "${project}" arg_list # set CMAKE_PARAMS
+    echo "configuring ${project} in ${src}"
+    mkdir -p ${BUILD_DIR}/${project}
+    replace_cmake_version ${project} # inject cmake_minimum_required(VERSION ...
+    pushd ${BUILD_DIR}/${project}
+        if [  ! -z ${GENERATOR}  ]; then
+            cmake ${src} -G "${GENERATOR}" ${CMAKE_PARAMS}
+        else
+            cmake ${src} ${CMAKE_PARAMS}
+        fi
+    popd
+    restore_CMakeLists ${project}
+}
+
+## produce the string of configuration parameters for cmake_configure
+# This function sets the global CMAKE_PARAMS variable.
+# $1 project name
+# $2[] array of additional parameters
+cmake_params_get() {
+    CMAKE_PARAMS=""
+    local project=${1}
+    local prefix_paths="${SRC_DIR}/${project};${BUILD_DIR}/${project};${INSTALL_DIR};${LIB_INSTALL_DIR}"
+    echo "-- CMAKE_PREFIX_PATH=${prefix_paths}"
+    local module_paths="${REPO_DIR}/cmake;${INSTALL_DIR}/cmake;${LIB_INSTALL_DIR}/cmake" # run custom cmakes first
+    echo "-- CMAKE_MODULE_PATHS=${module_paths}"
+    local conf=(\
+        "-DCMAKE_MSVC_RUNTIME_LIBRARY='MultiThreaded' " \
+        "-DCMAKE_C_FLAGS='-MP' " \
+        "-DCMAKE_C_CREATE_STATIC_LIBRARY=ON " \
+        "-DCMAKE_CXX_FLAGS='-MP' " \
+        "-DCMAKE_CXX_CREATE_STATIC_LIBRARY=ON " \
+        "-DCMAKE_MODULE_PATH=${module_paths} " \
+        "-DCMAKE_PREFIX_PATH=${prefix_paths} " \
+        "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} " \
+        "-Wno-deprecated "
+    )
     if [ ! -z ${2} ]; then
         # extract the additional parameters, from the named array
         local name=$2[@]
@@ -254,37 +303,8 @@ cmake_configure() {
     else
         local args=
     fi
-    mkdir -p ${BUILD_DIR}/${project}
-    local PREFIX_PATHS="${SRC_DIR}/${project};${BUILD_DIR}/${project};${INSTALL_DIR};${LIB_INSTALL_DIR}"
-    echo "-- CMAKE_PREFIX_PATH=${PREFIX_PATHS}"
-    local MODULE_PATHS="${REPO_DIR}/cmake;${INSTALL_DIR}/cmake;${LIB_INSTALL_DIR}/cmake" # run custom cmakes first
-    echo "-- CMAKE_MODULE_PATHS=${MODULE_PATHS}"
-    replace_cmake_version ${project}
-    pushd ${BUILD_DIR}/${project}
-    if [  ! -z ${GENERATOR}  ]; then
-        cmake ${SRC_DIR}/${project} \
-            -G "${GENERATOR}" \
-            -DCMAKE_MSVC_RUNTIME_LIBRARY='MultiThreaded' \
-            -DCMAKE_C_FLAGS='-MP' \
-            -DCMAKE_C_CREATE_STATIC_LIBRARY=ON \
-            -DCMAKE_CXX_FLAGS='-MP' \
-            -DCMAKE_CXX_CREATE_STATIC_LIBRARY=ON \
-            -DCMAKE_MODULE_PATH=${MODULE_PATHS} \
-            -DCMAKE_PREFIX_PATH=${PREFIX_PATHS} \
-            -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
-            ${args} -Wno-deprecated
-    else
-        cmake ${SRC_DIR}/${project} \
-            -DCMAKE_MSVC_RUNTIME_LIBRARY='MultiThreaded' \
-            -DCMAKE_C_FLAGS='-MP' \
-            -DCMAKE_CXX_FLAGS='-MP' \
-            -DCMAKE_MODULE_PATH=${MODULE_PATHS} \
-            -DCMAKE_PREFIX_PATH=${PREFIX_PATHS} \
-            -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
-            ${args} -Wno-deprecated
-    fi
-    popd
-    restore_CMakeLists $project
+    conf+=( "${args}" )
+    CMAKE_PARAMS="${conf[@]}"
 }
 
 ## Clone or pull a repository
