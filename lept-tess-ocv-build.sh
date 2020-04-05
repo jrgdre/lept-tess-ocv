@@ -53,7 +53,9 @@ UPDATE_REPOS=false
 ARCH=""
 
 # find out what we are building on and with
+echo " "
 echo "running the environment check ..."
+echo " "
 mkdir -p ./.tmp
 cd ./.tmp
 cmake ..
@@ -66,7 +68,9 @@ OS_RELEASE=`cat __BUILD_OS_RELEASE`
 cd ..
 echo "cleaning-up ./.tmp"
 rm -rf ./.tmp
+echo " "
 echo "done checking the environment"
+echo " "
 
 # parse the command line arguments for the script
 while [ ! -z ${#} ]; do
@@ -196,6 +200,29 @@ echo "installing libraries to      ${LIB_INSTALL_DIR}"
 ##  functions
 ## ===========
 
+## Backup the original CMakeLists.txt for a project
+# $1 CMakeLists.txt (src) directory
+backup_CMakeLists_txt() {
+    local src=${1}
+    if [ ! -f ${src}/CMakeLists.backup ]; then
+        cp ${src}/CMakeLists.txt ${src}/CMakeLists.backup
+    fi
+}
+
+## Build a project that supports CMake
+# $1 project name
+cmake_build() {
+    local project=${1}
+    echo " "
+    echo "building ${project} in ${BUILD_DIR}/${project} ..."
+    echo " "
+    pushd ${BUILD_DIR}/${project}
+        cmake --build ${BUILD_DIR}/${project} \
+            --config ${BUILD_TYPE} \
+            --target install
+    popd
+}
+
 ## make pushd shut up
 # from https://stackoverflow.com/questions/25288194/dont-display-pushd-popd-stack-across-several-bash-scripts-quiet-pushd-popd
 pushd () {
@@ -208,63 +235,60 @@ popd () {
     command popd "${@}" > /dev/null
 }
 
-## Build a project that supports CMake
-# $1 project name
-cmake_build() {
-    local project=${1}
-    echo " "
-    echo "building ${project} in ${BUILD_DIR}/${project}"
-    echo " "
-    pushd ${BUILD_DIR}/${project}
-        cmake --build ${BUILD_DIR}/${project} \
-            --config ${BUILD_TYPE} \
-            --target install
-    popd
-}
-
 ## Replace the VERSION specified in cmake_minimum_required for a project
 # We use this to set a number of CMake policies we need at there NEW behaviour.
 # params:
 # $1 CMakeLists.txt directory
 replace_cmake_version() {
-    local src=$1
-    mv ${src}/CMakeLists.txt ${src}/CMakeLists._org
-    sed 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |' \
-        ${src}/CMakeLists._org > ${src}/CMakeLists.txt
+    local src=${1}
+    sed -i 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |' \
+        ${src}/CMakeLists.txt
 
 }
 
 ## Restore the original CMakeLists.txt for a project
 # We don't want to leave repositories in a dirty state.
-# $1 CMakeLists.txt directory
-restore_CMakeLists(){
+# $1 CMakeLists.txt (src) directory
+restore_CMakeLists_txt() {
     local src=$1
-    if [ -f ${src}/CMakeLists._org ]; then
+    if [ -f ${src}/CMakeLists.backup ]; then
         rm ${src}/CMakeLists.txt
-        mv ${src}/CMakeLists._org ${src}/CMakeLists.txt
+        mv ${src}/CMakeLists.backup ${src}/CMakeLists.txt
     fi
 }
 
 ## Configure a project that supports CMake
-# $1 project name
-# $2 source directory
-# $3[] array of additional parameters
+# $1     project name
+# $2     source directory
+# $3[]   array of additional parameters
+# $4[][] array of additional libraries (s. donwstream zlib for structure)
 cmake_configure() {
     local project=${1}
     local src=${2}
-    local name=
-    local arg_list=
-    if [ ! -z ${3} ]; then
-        # extract the additional parameters, from the named array
-        name=$3[@]
-        arg_list=("${!name}")
-    fi
+    local params_list_name=
+    local params_list=
+    local targets_libs_list_name=
+    local targets_libs_list=
     echo " "
-    echo "configuring ${project} in ${src}"
+    echo "configuring ${project} in ${src} ..."
     echo " "
-    cmake_params_get "${project}" arg_list # set CMAKE_PARAMS
-    mkdir -p ${BUILD_DIR}/${project}
+    backup_CMakeLists_txt ${src}
+    ## patch CMakeList.txt
     replace_cmake_version ${src} # inject cmake_minimum_required(VERSION ...
+    # extract the additional parameters, from ${3[]}
+    if [ ! -z ${3} ]; then
+        params_list_name=$3[@]
+        params_list=("${!params_list_name}")
+    fi
+    cmake_params_get "${project}" params_list # sets CMAKE_PARAMS
+    # extract additional libraries for the different targets from ${4[][]}
+    if [ ! -z ${4} ]; then
+        targets_libs_list_name=$4[@]
+        targets_libs_list=("${!targets_libs_list_name}")
+        targets_add_libraries "${src}/CMakeLists.txt" targets_libs_list
+    fi
+    # configure
+    mkdir -p ${BUILD_DIR}/${project}
     pushd ${BUILD_DIR}/${project}
         if [  ! -z ${GENERATOR}  ]; then
             cmake ${src} -G "${GENERATOR}" ${CMAKE_PARAMS}
@@ -272,7 +296,7 @@ cmake_configure() {
             cmake ${src} ${CMAKE_PARAMS}
         fi
     popd
-    restore_CMakeLists ${src}
+    restore_CMakeLists_txt ${src}
 }
 
 ## produce the string of configuration parameters for cmake_configure
@@ -295,9 +319,11 @@ cmake_params_get() {
         "-DCMAKE_MODULE_PATH=${module_paths} " \
         "-DCMAKE_PREFIX_PATH=${prefix_paths} " \
         "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} " \
-        "-DCMAKE_EXE_LINKER_FLAGS='/NODEFAULTLIB:LIBCMT'"
+        "-DCMAKE_TRY_COMPILE_TARGET_TYPE='STATIC_LIBRARY' " \
+        "-DCMAKE_EXE_LINKER_FLAGS='/NODEFAULTLIB:LIBCMT' " \
+        "-DBUILD_SHARED_LIBS=OFF " \
         "-Wno-deprecated " \
-        "-Wno-dev" \
+        "-Wno-dev " \
     )
     if [ ! -z ${2} ]; then
         # extract the additional parameters, from the named array
@@ -348,6 +374,32 @@ git_clone_pull() {
             popd
         fi
     popd
+}
+
+## add libraries to a CMake target in the file specified
+# $1     CMakefile to modify
+# $2[][] array of libraries to add
+targets_add_libraries() {
+    local cmake_file=${1}
+    local array_name=
+    local arrayt=
+    local cmake_targets=
+    if [ ! -f ${cmake_file} ]; then
+        echo "target_add_libraries can't find: ${cmake_file}"
+        exit 1
+    fi
+    if [ ! -z ${2} ]; then
+        # extract the list names, from the named array
+        array_name=$2[@]
+        array=("${!array_name}")
+        cmake_targets=${array[@]}
+        for cmake_target in ${cmake_targets[@]}; do
+            local lib_list=("${!cmake_target}")
+            echo "-- adding libraries to target \"${cmake_target}\" (${lib_list[@]})"
+            sed -i "s|target_link_libraries(${cmake_target} |target_link_libraries(${cmake_target} ${lib_list[@]} |" \
+                ${cmake_file}
+        done
+    fi
 }
 
 ## ============================
