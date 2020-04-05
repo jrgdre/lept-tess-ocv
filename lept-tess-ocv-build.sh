@@ -82,6 +82,7 @@ while [ ! -z $# ]; do
             echo "-a, --arch <platform-name>        define an architecture for CMAKE_GENERATOR (if supported by generator)"
             echo "-b, --build <CMAKE_BUILD_TYPE>    override the default CMAKE_BUILD_TYPE (Release)"
             echo "-c, --clean                       remove all intermediate files of a previous build before building"
+            echo "-i, --initial                     remove all source and intermediate files and start from scratch"
             exit 0
             ;;
         -a|--arch)
@@ -102,7 +103,7 @@ while [ ! -z $# ]; do
             fi
             shift
             ;;
-        -c|-clean)
+        -c|--clean)
             CLEAN_BUILD=true
             shift
             ;;
@@ -114,6 +115,10 @@ while [ ! -z $# ]; do
             else
                 echo "no generator specified, remove switch for platform default generator"
             fi
+            shift
+            ;;
+        -i|--initial)
+            INITIAL_BUILD=true
             shift
             ;;
         -o|--os)
@@ -285,14 +290,32 @@ git_clone_pull() {
 ## ============================
 
 ## clean-up old build and install files
-if [  $CLEAN_BUILD = true  ]; then
+if [  ${CLEAN_BUILD} = true  ]; then
     echo "cleaning up old files"
-    if [ $OUT_DIR != $REPO_DIR ]; then
-        rm -rf $OUT_DIR
+    if [ ${OUT_DIR} != ${REPO_DIR} ]; then
+        rm -rf ${OUT_DIR}
     else
-        rm -rf $BUILD_DIR
-        rm -rf $INSTALL_DIR
+        rm -rf ${BUILD_DIR}
+        rm -rf ${INSTALL_DIR}
     fi
+fi
+
+## clean-up all downloads, build and install files and start from scratch
+if [  ${INITIAL_BUILD} = true  ]; then
+    echo "cleaning up all source repositories, intermediate and install files"
+    if [ ${OUT_DIR} != ${REPO_DIR} ]; then
+        rm -rf ${OUT_DIR}
+    else
+        rm -rf ${BUILD_DIR}
+        rm -rf ${INSTALL_DIR}
+    fi
+    if [ ${SRC_DIR} == ${REPO_DIR} ]; then
+        echo "I'm asked to delete ${REPO_DIR}"
+        echo "That doesn't sound right. I'm _not_ going to do that!"
+        echo "Please check the script. Something is wrong."
+        exit 1
+    fi
+    rm -rf ${SRC_DIR}
 fi
 
 ## create common directories
