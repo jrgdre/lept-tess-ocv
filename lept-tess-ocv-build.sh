@@ -225,23 +225,23 @@ cmake_build() {
 ## Replace the VERSION specified in cmake_minimum_required for a project
 # We use this to set a number of CMake policies we need at there NEW behaviour.
 # params:
-# $1 project name
+# $1 CMakeLists.txt directory
 replace_cmake_version() {
-    local project=$1
-    mv $SRC_DIR/$project/CMakeLists.txt $SRC_DIR/$project/CMakeLists._org
+    local src=$1
+    mv ${src}/CMakeLists.txt ${src}/CMakeLists._org
     sed 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |' \
-        $SRC_DIR/$project/CMakeLists._org > $SRC_DIR/$project/CMakeLists.txt
+        ${src}/CMakeLists._org > ${src}/CMakeLists.txt
 
 }
 
 ## Restore the original CMakeLists.txt for a project
 # We don't want to leave repositories in a dirty state.
-# $1 project name
+# $1 CMakeLists.txt directory
 restore_CMakeLists(){
-    local project=$1
-    if [ -f $SRC_DIR/$project/CMakeLists._org ]; then
-        rm $SRC_DIR/$project/CMakeLists.txt
-        mv $SRC_DIR/$project/CMakeLists._org $SRC_DIR/$project/CMakeLists.txt
+    local src=$1
+    if [ -f ${src}/CMakeLists._org ]; then
+        rm ${src}/CMakeLists.txt
+        mv ${src}/CMakeLists._org ${src}/CMakeLists.txt
     fi
 }
 
@@ -260,9 +260,11 @@ cmake_configure() {
         arg_list=("${!name}")
     fi
     cmake_params_get "${project}" arg_list # set CMAKE_PARAMS
+    echo " "
     echo "configuring ${project} in ${src}"
+    echo " "
     mkdir -p ${BUILD_DIR}/${project}
-    replace_cmake_version ${project} # inject cmake_minimum_required(VERSION ...
+    replace_cmake_version ${src} # inject cmake_minimum_required(VERSION ...
     pushd ${BUILD_DIR}/${project}
         if [  ! -z ${GENERATOR}  ]; then
             cmake ${src} -G "${GENERATOR}" ${CMAKE_PARAMS}
@@ -270,7 +272,7 @@ cmake_configure() {
             cmake ${src} ${CMAKE_PARAMS}
         fi
     popd
-    restore_CMakeLists ${project}
+    restore_CMakeLists ${src}
 }
 
 ## produce the string of configuration parameters for cmake_configure
