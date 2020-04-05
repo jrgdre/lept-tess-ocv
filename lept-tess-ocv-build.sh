@@ -203,11 +203,13 @@ popd () {
 ## Build a project that supports CMake
 # $1 project name
 cmake_build() {
-    cd $BUILD_DIR/$1
-    cmake --build $BUILD_DIR/$1 \
-        --config $BUILD_TYPE \
-        --target install
-    cd $REPO_DIR
+    local project=${1}
+    echo "building ${project} in ${BUILD_DIR}/${project}"
+    pushd ${BUILD_DIR}/$1
+    cmake --build ${BUILD_DIR}/${project}
+          --config ${BUILD_TYPE} \
+          --target install
+    popd
 }
 
 ## Replace the VERSION specified in cmake_minimum_required for a project
