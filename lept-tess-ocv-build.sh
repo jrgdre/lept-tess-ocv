@@ -210,6 +210,29 @@ cmake_build() {
     cd $REPO_DIR
 }
 
+## Replace the VERSION specified in cmake_minimum_required for a project
+# We use this to set a number of CMake policies we need at there NEW behaviour.
+# params:
+# $1 project name
+replace_cmake_version() {
+    local project=$1
+    mv $SRC_DIR/$project/CMakeLists.txt $SRC_DIR/$project/CMakeLists._org
+    sed 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |' \
+        $SRC_DIR/$project/CMakeLists._org > $SRC_DIR/$project/CMakeLists.txt
+
+}
+
+## Restore the original CMakeLists.txt for a project
+# We don't want to leave repositories in a dirty state.
+# $1 project name
+restore_CMakeLists(){
+    local project=$1
+    if [ -f $SRC_DIR/$project/CMakeLists._org ]; then
+        rm $SRC_DIR/$project/CMakeLists.txt
+        mv $SRC_DIR/$project/CMakeLists._org $SRC_DIR/$project/CMakeLists.txt
+    fi
+}
+
 ## Configure a project that supports CMake
 # $1 project name
 # $2[] array of additional parameters
