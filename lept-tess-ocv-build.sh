@@ -10,8 +10,10 @@
 #   - a c/c++ compiler
 #   - nasm
 #   - pkg-config
+#   - curl (optional)
+#   - python 2 (optional)
 #   - you need to define the PYTHON3 environment variable, that points to your
-#     python 3 binary
+#     python 3 binary (optional)
 #
 # usage:
 #   s. ReadMe.md
@@ -1087,56 +1089,25 @@ openjpeg() {
 #   - leptonica
 #   - archive
 tesseract() {
-    git_clone_pull tesseract \
+    git_clone_pull "tesseract" \
         https://github.com/tesseract-ocr/tesseract.git master \
         75103040c94ffd7fe5e4e3dfce0a7e67a8420849
-    if [ "$CXX_COMPILER_ID" = "MSVC" ]; then
-        # fix tesseract.exe : fatal error LNK1120: 43 unresolved externals
-        LIB_JBIG=$LIB_INSTALL_DIR/libjbig.lib
-        LIB_JP2K=$LIB_INSTALL_DIR/openjp2.lib
-        LIB_LZMA=$LIB_INSTALL_DIR/liblzma.lib
-        LIB_TIFF=$LIB_INSTALL_DIR/tiff.lib
-        # posix -> windows
-        LIB_JBIG=$(sed 's|^/\([a-z,A-Z]\)/|\1:/|' <<< $LIB_JBIG)
-        LIB_JP2K=$(sed 's|^/\([a-z,A-Z]\)/|\1:/|' <<< $LIB_JP2K)
-        LIB_LZMA=$(sed 's|^/\([a-z,A-Z]\)/|\1:/|' <<< $LIB_LZMA)
-        LIB_TIFF=$(sed 's|^/\([a-z,A-Z]\)/|\1:/|' <<< $LIB_TIFF)
-        ## patch CMakeLists.txt
-        # fix: enable MSVC /MT build
-        mv $SRC_DIR/tesseract/CMakeLists.txt $SRC_DIR/tesseract/CMakeLists.org
-        sed 's|cmake_minimum_required(VERSION 3.6|cmake_minimum_required(VERSION 3.17|' \
-            $SRC_DIR/tesseract/CMakeLists.org \
-            > $SRC_DIR/tesseract/CMakeLists.tmp0
-        echo "cmake_policy( SET CMP0091 NEW )" \
-            >> $SRC_DIR/tesseract/CMakeLists.txt
-        echo 'set( CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded" )' \
-            >> $SRC_DIR/tesseract/CMakeLists.txt
-        cat $SRC_DIR/tesseract/CMakeLists.tmp0
-         >> $SRC_DIR/tesseract/CMakeLists.txt
-        # missing library references for static linking
-        mv $SRC_DIR/tesseract/CMakeLists.txt $SRC_DIR/tesseract/CMakeLists.tmp1
-        sed "s|target_link_libraries(tesseract tiff)|target_link_libraries(tesseract $LIB_JBIG $LIB_JP2K $LIB_LZMA $LIB_TIFF)|" \
-            $SRC_DIR/tesseract/CMakeLists.tmp1
-          > $SRC_DIR/tesseract/CMakeLists.tmp2
-        # fix archive and tiff functions static decoration
-        sed "s|add_definitions(-D_CRT_SECURE_NO_WARNINGS)|add_definitions(-D_CRT_SECURE_NO_WARNINGS -DLZMA_API_STATIC -DLIBARCHIVE_STATIC)|" \
-            $SRC_DIR/tesseract/CMakeLists.tmp2
-          > $SRC_DIR/tesseract/CMakeLists.txt
-        rm -f $SRC_DIR/tesseract/CMakeLists.tmp0
-        rm -f $SRC_DIR/tesseract/CMakeLists.tmp1
-        rm -f $SRC_DIR/tesseract/CMakeLists.tmp2
-    fi
-    cmake_configure tesseract \
-        -DSTATIC=ON \
-        -DBUILD_TRAINING_TOOLS=OFF \
-        -DSW_BUILD=OFF \
-        -DLeptonica_DIR=$BUILD_DIR/leptonica
+    local cm_params=(\
+        "-DSTATIC=ON " \
+        "-DBUILD_TRAINING_TOOLS=OFF " \
+        "-DSW_BUILD=OFF " \
+        "-DLeptonica_DIR=$BUILD_DIR/leptonica" \
+    )
+    local tesseract=( "libjbig liblzma" )
+    local libs=( tesseract )
+    local c_flags=()
+    cmake_configure "tesseract" "${SRC_DIR}/tesseract" cm_params libs c_flags
     cmake_build "tesseract"
-    if [ "$CXX_COMPILER_ID" = "MSVC" ]; then
-        # undo changes to repository
-        rm $SRC_DIR/tesseract/CMakeLists.txt
-        mv $SRC_DIR/tesseract/CMakeLists.org \
-        $SRC_DIR/tesseract/CMakeLists.txt
+    mkdir -p "${BIN_INSTALL_DIR}/tessdata"
+    if [ ! -f "${BIN_INSTALL_DIR}/tessdata/eng.traineddata" ]; then
+        echo "-- fetching eng.traineddata"
+        curl -L https://github.com/tesseract-ocr/tessdata/raw/master/eng.traineddata \
+            > "${BIN_INSTALL_DIR}/tessdata/eng.traineddata"
     fi
 }
 
@@ -1323,10 +1294,10 @@ fi
 # libwebp
 # libtiff   # with libwebp
 # vtk
-leptonica
+# leptonica
+tesseract
 exit 0
 
-tesseract
 opencv_contrib
 opencv
 
