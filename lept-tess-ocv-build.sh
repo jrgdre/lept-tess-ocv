@@ -54,6 +54,7 @@ add_compiler_definitions() {
         "-DLZMA_API_STATIC " \
         "-DLIBARCHIVE_STATIC " \
         "-DFREEGLUT_STATIC " \
+        "-DOPJ_STATIC" \
     )
     local codefs="${defaults[@]} ${comp_defs[@]}"
     local cmake_file="${src}/CMakeLists.txt"
@@ -717,7 +718,7 @@ leptonica() {
     local cm_params=( "-DSW_BUILD=OFF" "-DBUILD_PROG=ON" )
     local libs=()
     local c_flags=()
-    sed -i "s|\s*target_link_libraries\s*(\s*${target}|target_link_libraries(${target} libcmt|" \
+    sed -i 's/target_link_libraries\s*(\s*${target}/target_link_libraries( ${target} liblzma libjbig openjp2 /' \
         "${SRC_DIR}/leptonica/prog/CMakeLists.txt"
     cmake_configure "leptonica" "${SRC_DIR}/leptonica" cm_params libs c_flags
     sed -i "/#\s*define\s*HAVE_FMEMOPEN/d" \
