@@ -982,24 +982,7 @@ opencv() {
     )
     local libs=()
     local c_flags=()
-    sed -i '
-        /if\s*(\s*TARGET gen_opencv_python_source/ {
-            :loop
-            /set\s*(\s*deps\s*${OPENCV_MODULE_${the_module}_DEPS}/ !{
-                N
-                b loop
-            }
-            /set\s*(\s*deps\s*${OPENCV_MODULE_${the_module}_DEPS}/ {
-                s/set\s*(\s*deps\s*${OPENCV_MODULE_${the_module}_DEPS}/set(deps ${OPENCV_MODULE_${the_module}_DEPS} libjbig liblzma/
-            }
-        }
-    ' "${SRC_DIR}/opencv/modules/python/common.cmake"
-    sed -i '
-        s/ocv_target_link_libraries\s*(\s*${the_target}\s*${APP_MODULES}/ocv_target_link_libraries(${the_target} ${APP_MODULES} libcmt libjbig liblzma/
-    ' "${SRC_DIR}/opencv/apps/CMakeLists.txt"
-    sed -i '
-        s/ocv_target_link_libraries\s*(\s*${the_target}\s*quirc/ocv_target_link_libraries(${the_target} quirc libcmt/
-    ' "${SRC_DIR}/opencv/modules/objdetect/CMakeLists.txt"
+    # inject libraries needed for static build
     sed -i '
         /ocv_target_link_libraries(${the_module} PRIVATE ${OPENCV_LINKER_LIBS} ${OPENCV_HAL_LINKER_LIBS} ${IPP_LIBS} ${ARGN})/ {
             a\
