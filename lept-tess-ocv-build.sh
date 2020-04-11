@@ -63,7 +63,6 @@ add_compiler_definitions() {
     )
     local codefs="${defaults[@]} ${comp_defs[@]}"
     local cmake_file="${src}/CMakeLists.txt"
-    local lno=`cat ${cmake_file} | grep -ne "project("| cut -f1 -d:`
     echo "-- adding definitions to ${project} ( ${codefs} )"
     sed -i "
         # match one-liners project declarations
@@ -103,7 +102,7 @@ add_link_directories() {
         # match one-liners project declarations
         /project\s*(.*)/I {
             a \
-            link_directories( ${ldirs} )
+            link_directories( \"${ldirs}\" )
         }
 
         # match multi-liners project declarations
@@ -117,7 +116,7 @@ add_link_directories() {
                 }
                 /)/ {
                     a \
-                    link_directories( ${ldirs} )
+                    link_directories( \"${ldirs}\" )
                 }
             }
         }
@@ -516,7 +515,7 @@ pushd () {
 # $1 CMakeLists.txt directory
 replace_cmake_version() {
     local src=${1}
-    sed -i 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |I' \
+    sed -i 's/cmake_minimum_required*/cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was /I' \
         ${src}/CMakeLists.txt
 
 }
