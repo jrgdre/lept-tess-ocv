@@ -550,14 +550,14 @@ target_add_libraries() {
             echo "-- adding libraries to ${cmake_file} ${cmake_target} ( ${libs_array[@]} )"
             sed -i "
                 # match one-liners executable declarations
-                /target_link_libraries\s*(\s*${cmake_target}.*)/I {
+                /target_link_libraries\s*(\s*${cmake_target} .*)/I {
                     a \
                     target_link_libraries( ${cmake_target} ${libs_array[@]} )
                 }
 
                 # match multi-liners executable declarations
-                /target_link_libraries\s*(\s*${cmake_target}.*)/I !{
-                    /target_link_libraries\s*(\s*${cmake_target}/I {
+                /target_link_libraries\s*(\s*${cmake_target} .*)/I !{
+                    /target_link_libraries\s*(\s*${cmake_target} /I {
                         N
                         :loop
                         /)/ !{
@@ -577,14 +577,14 @@ target_add_libraries() {
                 echo "-- adding libraries to ${cmake_file} ${cmake_target} ( ${libs_array[@]} )"
                 sed -i "
                     # match one-liners executable declarations
-                    /add_executable\s*(\s*${cmake_target}.*)/I {
+                    /add_executable\s*(\s*${cmake_target} .*)/I {
                         a \
                         target_link_libraries( ${cmake_target} ${libs_array[@]} )
                     }
 
                     # match multi-liners executable declarations
-                    /add_executable\s*(\s*${cmake_target}.*)/I !{
-                        /add_executable\s*(\s*${cmake_target}/I {
+                    /add_executable\s*(\s*${cmake_target} .*)/I !{
+                        /add_executable\s*(\s*${cmake_target} /I {
                             N
                             :loop
                             /)/ !{
@@ -675,13 +675,13 @@ jbigkit() {
         https://github.com/zdenop/jbigkit.git master \
         d91c6455c5e4d7f63df3fe02165f3ed6d8617920
     local cm_params=()
+    local jbgtopbm=( "libcmt" )
+    local jbgtopbm85=( "libcmt" )
+    local pbmtojbg=( "libcmt" )
+    local pbmtojbg85=( "libcmt" )
     local tstcodec=( "libcmt" )
     local tstcodec85=( "libcmt" )
-    local pbmtojbg=( "libcmt" )
-    local jbgtopbm85=( "libcmt" )
-    local jbgtopbm=( "libcmt" )
-    local pbmtojbg85=( "libcmt" )
-    local libs=( tstcodec tstcodec85 pbmtojbg jbgtopbm85 jbgtopbm pbmtojbg85 )
+    local libs=( jbgtopbm jbgtopbm85 pbmtojbg pbmtojbg85 tstcodec tstcodec85 )
     local c_flags=()
     cmake_configure "jbigkit" "${SRC_DIR}/jbigkit" cm_params libs c_flags
     cmake_build "jbigkit"
@@ -1251,7 +1251,6 @@ zlib
 xz
 zstd
 # libarchive <-- ToDo maybe
-
 giflib
 libpng
 jbigkit
