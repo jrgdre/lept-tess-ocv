@@ -728,9 +728,40 @@ libarchive() {
         "${zstd_inc} " \
         "${zstd_lib} " \
         "-DENABLE_WERROR=OFF " \
+        "-DLIBMD_LIBRARY=libcmt" \
+        "-DACL_LIBRARY=libcmt" \
+        "-DRICHACL_LIBRARY=libcmt" \
     )
     local libs=()
-    local c_flags
+    local c_flags=()
+    # fix a couple of things for MSW
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_POSIX_SPAWNP/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_LOCALTIME_R/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_GMTIME_R/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_FSEEKO/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_TIMEGM/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_NL_LANGINFO/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_PIPE/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_FCHMOD/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_SYMLINK/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_LCHMOD/d" \
+        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
+    # patch a couple of things
+    sed -i 's/LIST(APPEND ADDITIONAL_LIBS ${LIBMD_LIBRARY})/LIST(APPEND ADDITIONAL_LIBS libcmt)/I' \
+        "${SRC_DIR}/libarchive/CMakeLists.txt"
+    sed -i 's/LIST(APPEND ADDITIONAL_LIBS ${ACL_LIBRARY})/LIST(APPEND ADDITIONAL_LIBS libcmt)/I' \
+        "${SRC_DIR}/libarchive/CMakeLists.txt"
+    sed -i 's/LIST(APPEND ADDITIONAL_LIBS ${RICHACL_LIBRARY})/LIST(APPEND ADDITIONAL_LIBS libcmt)/I' \
+        "${SRC_DIR}/libarchive/CMakeLists.txt"
     cmake_configure "libarchive" "${SRC_DIR}/libarchive" cm_params libs c_flags
     cmake_build "libarchive"
     # fix some things, so CMake 3.17 uses the static lib
@@ -1216,24 +1247,24 @@ fi
 
 # == build packages ==
 
-# zlib
-# xz
-# zstd
-# libarchive <-- ToDo, maybe
+zlib
+xz
+zstd
+# libarchive <-- ToDo maybe
 
-# giflib
-# libpng
-# jbigkit
-# libjpeg-turbo
-# freeglut
-# openjpeg
-# libtiff   # without libwebp
-# libwebp
-# libtiff   # with libwebp
-# vtk
-# leptonica
-# tesseract
-# opencv_contrib
+giflib
+libpng
+jbigkit
+libjpeg-turbo
+freeglut
+openjpeg
+libtiff   # without libwebp
+libwebp
+libtiff   # with libwebp
+vtk
+leptonica
+tesseract
+opencv_contrib
 opencv
 
 exit 0
