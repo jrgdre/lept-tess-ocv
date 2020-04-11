@@ -702,25 +702,6 @@ leptonica() {
     git_clone_pull "leptonica" \
         https://github.com/DanBloomberg/leptonica.git master \
         002843bdf81ef4018fdf0f5c53262bbeab2b0fdc
-    # if [ "$CXX_COMPILER_ID" = "MSVC" ]; then
-    #     ## patch CMakeLists.txt
-    #     # fix: enable MSVC /MT build
-    #     mv $SRC_DIR/leptonica/CMakeLists.txt $SRC_DIR/leptonica/CMakeLists.org
-    #     sed 's|cmake_minimum_required(VERSION 2.8.11|cmake_minimum_required(VERSION 3.17|' \
-    #         $SRC_DIR/leptonica/CMakeLists.org \
-    #         > $SRC_DIR/leptonica/CMakeLists.tmp0
-    #     echo "cmake_policy( SET CMP0091 NEW )" \
-    #         >> $SRC_DIR/leptonica/CMakeLists.txt
-    #     echo 'set( CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded" )' \
-    #         >> $SRC_DIR/leptonica/CMakeLists.txt
-    #     cat $SRC_DIR/leptonica/CMakeLists.tmp0 >> $SRC_DIR/leptonica/CMakeLists.txt
-    #     # fix leptonica-1.79.0.lib: lzma and opj functions static decoration
-    #     mv $SRC_DIR/leptonica/CMakeLists.txt $SRC_DIR/leptonica/CMakeLists.tmp1
-    #     sed "s|add_definitions(-D_CRT_SECURE_NO_WARNINGS)|add_definitions(-D_CRT_SECURE_NO_WARNINGS -DLZMA_API_STATIC -DOPJ_STATIC)|" \
-    #         $SRC_DIR/leptonica/CMakeLists.tmp1 > $SRC_DIR/leptonica/CMakeLists.txt
-    #     rm -f $SRC_DIR/leptonica/CMakeLists.tmp0
-    #     rm -f $SRC_DIR/leptonica/CMakeLists.tmp1
-    # fi
     local cm_params=( "-DSW_BUILD=OFF" "-DBUILD_PROG=ON" )
     local libs=()
     local c_flags=()
@@ -730,12 +711,6 @@ leptonica() {
     sed -i "/#\s*define\s*HAVE_FMEMOPEN/d" \
         "${BUILD_DIR}\leptonica\src\config_auto.h"
     cmake_build "leptonica"
-    # if [ "$CXX_COMPILER_ID" = "MSVC" ]; then
-    #     # undo changes to repository
-    #     rm $SRC_DIR/leptonica/CMakeLists.txt
-    #     mv $SRC_DIR/leptonica/CMakeLists.org \
-    #     $SRC_DIR/leptonica/CMakeLists.txt
-    # fi
 }
 
 ## libarchive 3.4.2
