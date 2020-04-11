@@ -67,14 +67,14 @@ add_compiler_definitions() {
     echo "-- adding definitions to ${project} ( ${codefs} )"
     sed -i "
         # match one-liners project declarations
-        /project\s*(.*)/ {
+        /project\s*(.*)/I {
             a \
             add_definitions( ${codefs} )
         }
 
         # match multi-liners project declarations
-        /project\s*(.*)/ !{
-            /project\s*(/ {
+        /project\s*(.*)/I !{
+            /project\s*(/I {
                 N
                 :loop
                 /)/ !{
@@ -101,14 +101,14 @@ add_link_directories() {
     echo "-- adding to the linker search path ${project} ( ${ldirs} )"
     sed -i "
         # match one-liners project declarations
-        /project\s*(.*)/ {
+        /project\s*(.*)/I {
             a \
-    link_directories( ${ldirs} )
+            link_directories( ${ldirs} )
         }
 
         # match multi-liners project declarations
-        /project\s*(.*)/ !{
-            /project\s*(/ {
+        /project\s*(.*)/I !{
+            /project\s*(/I {
                 N
     :loop
                 /)/ !{
@@ -117,7 +117,7 @@ add_link_directories() {
                 }
                 /)/ {
                     a \
-    link_directories( ${ldirs} )
+                    link_directories( ${ldirs} )
                 }
             }
         }
@@ -516,7 +516,7 @@ pushd () {
 # $1 CMakeLists.txt directory
 replace_cmake_version() {
     local src=${1}
-    sed -i 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |' \
+    sed -i 's|cmake_minimum_required*|cmake_minimum_required(VERSION 3.17 FATAL_ERROR) # was |I' \
         ${src}/CMakeLists.txt
 
 }
@@ -551,14 +551,14 @@ target_add_libraries() {
             echo "-- adding libraries to ${cmake_file} ${cmake_target} ( ${libs_array[@]} )"
             sed -i "
                 # match one-liners executable declarations
-                /target_link_libraries\s*(\s*${cmake_target}.*)/ {
+                /target_link_libraries\s*(\s*${cmake_target}.*)/I {
                     a \
                     target_link_libraries( ${cmake_target} ${libs_array[@]} )
                 }
 
                 # match multi-liners executable declarations
-                /target_link_libraries\s*(\s*${cmake_target}.*)/ !{
-                    /target_link_libraries\s*(\s*${cmake_target}/ {
+                /target_link_libraries\s*(\s*${cmake_target}.*)/I !{
+                    /target_link_libraries\s*(\s*${cmake_target}/I {
                         N
                         :loop
                         /)/ !{
@@ -578,14 +578,14 @@ target_add_libraries() {
                 echo "-- adding libraries to ${cmake_file} ${cmake_target} ( ${libs_array[@]} )"
                 sed -i "
                     # match one-liners executable declarations
-                    /add_executable\s*(\s*${cmake_target}.*)/ {
+                    /add_executable\s*(\s*${cmake_target}.*)/I {
                         a \
                         target_link_libraries( ${cmake_target} ${libs_array[@]} )
                     }
 
                     # match multi-liners executable declarations
-                    /add_executable\s*(\s*${cmake_target}.*)/ !{
-                        /add_executable\s*(\s*${cmake_target}/ {
+                    /add_executable\s*(\s*${cmake_target}.*)/I !{
+                        /add_executable\s*(\s*${cmake_target}/I {
                             N
                             :loop
                             /)/ !{
