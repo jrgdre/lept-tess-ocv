@@ -242,6 +242,7 @@ cmake_params_get() {
     local prefix_paths="${SRC_DIR}/${project}/\;${BUILD_DIR}/${project}/\;${INSTALL_DIR}/\;${LIB_INSTALL_DIR}/"
     echo "-- CMAKE_PREFIX_PATH=${prefix_paths}"
     local conf=(\
+        "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded " \
         "-DCMAKE_C_CREATE_STATIC_LIBRARY=ON " \
         "-DCMAKE_CXX_CREATE_STATIC_LIBRARY=ON " \
         "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} " \
@@ -991,60 +992,45 @@ opencv() {
     git_clone_pull "opencv" \
         https://github.com/opencv/opencv.git master \
         bda89a6469aa79ecd8713967916bd754bff1d931
-
-    # as of commit bf0075a5 of opencv_contrib leptonica and tesseract detection
-    # for MS-Windowss VC is broken in opencv's text module
-    # - we find the libraries ourself
-    #   LIB_LEPT=`ls $LIB_DIR_TMP/leptonica*`
-    #   LIB_TESS=`ls $LIB_DIR_TMP/tesseract*`
-    # - disable the tesseract detection
-    #   -DTesseract_FOUND=ON \
-    # - set the variables
-    #   -DLept_LIBRARY=$LIB_LEPT \
-    #   -DTesseract_INCLUDE_DIR=$INSTALL_DIR/include/tesseract \
-    #   -DTesseract_LIBRARY=$LIB_TESS \
-    #   -DTesseract_INCLUDE_DIRS="$INSTALL_DIR/include/tesseract;$INSTALL_DIR/include/leptonica" \
-    #   -DTesseract_LIBRARYS="$LIB_TESS;$LiB_LEPT" \
-    # LIB_LEPT=`ls $LIB_DIR_TMP/leptonica*`
-    # LIB_TESS=`ls $LIB_DIR_TMP/tesseract*`
-    # # posix -> windows
-    # LIB_LEPT=$(sed 's|^/\([a-z,A-Z]\)/|\1:/|' <<< $LIB_LEPT)
-    # LIB_TESS=$(sed 's|^/\([a-z,A-Z]\)/|\1:/|' <<< $LIB_TESS)
-    cmake_configure "opencv" \
-        -DENABLE_CXX11=ON \
-        -DOPENCV_EXTRA_MODULES_PATH=$SRC_DIR/opencv_contrib/modules \
-        -DBUILD_PERF_TESTS:BOOL=OFF \
-        -DBUILD_TESTS:BOOL=OFF \
-        -DBUILD_DOCS:BOOL=OFF \
-        -DWITH_CUDA:BOOL=OFF \
-        -DEXECUTABLE_OUTPUT_PATH=$INSTALL_DIR/bin \
-        -DPYTHON3_EXECUTABLE=$PYTHON3/python
-    #     # \
-    #     # -DTesseract_FOUND=ON \
-    #     # -DLept_LIBRARY=$LIB_LEPT \
-    #     # -DTesseract_INCLUDE_DIR=$INSTALL_DIR/include \
-    #     # -DTesseract_LIBRARY=$LIB_TESS \
-    #     # -DTesseract_INCLUDE_DIRS=$INSTALL_DIR/include \
-    #     # -DTesseract_LIBRARIES=$LIB_TESS\;$LIB_LEPT \
+    local cm_params=(\
+        "-DENABLE_CXX11=ON " \
+        "-DOPENCV_EXTRA_MODULES_PATH=$SRC_DIR/opencv_contrib/modules " \
+        "-DBUILD_PERF_TESTS:BOOL=OFF " \
+        "-DBUILD_TESTS:BOOL=OFF " \
+        "-DBUILD_DOCS:BOOL=OFF " \
+        "-DWITH_CUDA:BOOL=OFF " \
+        "-DEXECUTABLE_OUTPUT_PATH=$INSTALL_DIR/bin " \
+        "-DPYTHON3_EXECUTABLE=$PYTHON3/python " \
+        "-DBUILD_TIFF=OFF " \
+    )
+    local libs=()
+    local c_flags=()
+    sed -i '
+        /if\s*(\s*TARGET gen_opencv_python_source/ {
+            :loop
+            /set\s*(\s*deps\s*${OPENCV_MODULE_${the_module}_DEPS}/ !{
+                N
+                b loop
+            }
+            /set\s*(\s*deps\s*${OPENCV_MODULE_${the_module}_DEPS}/ {
+                s/set\s*(\s*deps\s*${OPENCV_MODULE_${the_module}_DEPS}/set(deps ${OPENCV_MODULE_${the_module}_DEPS} libjbig liblzma/
+            }
+        }
+    ' "${SRC_DIR}/opencv/modules/python/common.cmake"
+    sed -i '
+        s/ocv_target_link_libraries\s*(\s*${the_target}\s*${APP_MODULES}/ocv_target_link_libraries(${the_target} ${APP_MODULES} libcmt libjbig liblzma/
+    ' "${SRC_DIR}/opencv/apps/CMakeLists.txt"
+    sed -i '
+        s/ocv_target_link_libraries\s*(\s*${the_target}\s*quirc/ocv_target_link_libraries(${the_target} quirc libcmt/
+    ' "${SRC_DIR}/opencv/modules/objdetect/CMakeLists.txt"
+    sed -i '
+        /ocv_target_link_libraries(${the_module} PRIVATE ${OPENCV_LINKER_LIBS} ${OPENCV_HAL_LINKER_LIBS} ${IPP_LIBS} ${ARGN})/ {
+            a\
+            ocv_target_link_libraries(${the_module} libcmt libjbig liblzma)
+        }
+    ' "${SRC_DIR}/opencv/cmake/OpenCVModule.cmake"
+    cmake_configure "opencv" "${SRC_DIR}/opencv" cm_params libs c_flags
     cmake_build "opencv"
-
-    # mkdir -p $LIB_DIR_OUT-dynamic/cmake/opencv
-    # mv $INSTALL_DIR/OpenCV* $LIB_DIR_OUT-dynamic/cmake/opencv/
-    # mv $INSTALL_DIR/setup_vars_opencv* $INSTALL_DIR/bin/
-    # mkdir -p $LIB_DIR_OUT-dynamic/LICENSES
-    # mv $INSTALL_DIR/LICENSE $LIB_DIR_OUT-dynamic/LICENSES/opencv.txt
-
-    # ## ToDo: find a way to set or detect the opencv build output directory
-    # OCV_INSTALL_DIR=`ls $INSTALL_DIR/x64`
-    # cp -rf $INSTALL_DIR/x64/$OCV_INSTALL_DIR/bin/* $INSTALL_DIR/bin/
-    # cp -rf $INSTALL_DIR/x64/$OCV_INSTALL_DIR/lib/* $LIB_DIR_OUT-dynamic/
-    # mv $LIB_DIR_OUT-dynamic/*.cmake $LIB_DIR_OUT-dynamic/cmake/opencv/
-    # rm -rf $LIB_DIR_TMP
-    # rm -rf $INSTALL_DIR/x64
-
-    # ## static build of opencv
-    # There are a lot of questionable or broken static library builds upstream.
-    # So we omit a static build of opencv for now.
 }
 
 ## opencv_contrib 4.2.0
@@ -1229,13 +1215,6 @@ zstd() {
     cmake_build "zstd"
 }
 
-_poc() {
-    local cm_params=()
-    local libs=()
-    local c_flags=()
-    cmake_configure "_poc" "${SRC_DIR}/_poc" cm_params libs c_flags
-}
-
 ## ======
 ##  main
 ## ======
@@ -1277,8 +1256,6 @@ fi
 
 # == build packages ==
 
-# _poc
-
 # zlib
 # xz
 # zstd
@@ -1295,10 +1272,8 @@ fi
 # libtiff   # with libwebp
 # vtk
 # leptonica
-tesseract
-exit 0
-
-opencv_contrib
+# tesseract
+# opencv_contrib
 opencv
 
 exit 0
