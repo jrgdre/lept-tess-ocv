@@ -6,11 +6,13 @@
 #
 # prerequisites:
 #   - git
+#   - sed
+#   - grep
 #   - cmake
+#   - curl
 #   - a c/c++ compiler
 #   - nasm
 #   - pkg-config
-#   - curl (optional)
 #   - python 2 (optional)
 #   - you need to define the PYTHON3 environment variable, that points to your
 #     python 3 binary (optional)
@@ -31,6 +33,7 @@
 #   jrgdre  "Joerg Drechsler, Medical Data Solutions GmbH"
 #
 # versions:
+#   2.0.0 2020-04-11 jrgdre "add viz<-vtk<-freeglut, MSVC 19 static linking"
 #   1.0.0 2020-03-26 jrgdre "initial release, working MSVC 19 dynamic linking"
 
 
