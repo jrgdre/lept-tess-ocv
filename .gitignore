@@ -5,6 +5,7 @@
 !.gitignore
 !CMakeLists.txt
 !lept-tess-ocv-build.sh
+!lept-tess-ocv-build_piano.sh
 !License.md
 !msw-x64-setup.bat
 !ReadMe.md
