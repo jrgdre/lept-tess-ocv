@@ -4,4 +4,4 @@
 
 clear && \
     time ./lept-tess-ocv-build.sh ${1} \
-        | grep -i --color=always 'error\|C4013\|warning\|vcxproj\|configuring'
+        | grep -iw --color=always 'error\|C4013\|warning\|vcxproj\|configuring'
