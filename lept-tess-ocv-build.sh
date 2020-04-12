@@ -547,17 +547,17 @@ target_add_libraries() {
     local libs_array=("${!libs_array_name}")
     local cmake_file=
     pushd ${src}
-        cmake_file=`grep --include=CMakeLists.txt -rile "target_link_libraries\s*(\s*${cmake_target}" || true`
+        cmake_file=`grep --include=CMakeLists.txt -rile "target_link_libraries\s*(\s*${cmake_target} " || true`
         if [ ! -z "${cmake_file}" ]; then
             echo "-- adding libraries to ${cmake_file} ${cmake_target} ( ${libs_array[@]} )"
             sed -i "
-                # match one-liners executable declarations
+                # match one-liners link libraries declarations
                 /target_link_libraries\s*(\s*${cmake_target} .*)/I {
                     a \
                     target_link_libraries( ${cmake_target} ${libs_array[@]} )
                 }
 
-                # match multi-liners executable declarations
+                # match multi-liners link libraries declarations
                 /target_link_libraries\s*(\s*${cmake_target} .*)/I !{
                     /target_link_libraries\s*(\s*${cmake_target} /I {
                         N
@@ -574,7 +574,7 @@ target_add_libraries() {
                 }
             " ${cmake_file}
         else
-            cmake_file=`grep --include=CMakeLists.txt -rile "add_executable\s*(\s*${cmake_target}" || true`
+            cmake_file=`grep --include=CMakeLists.txt -rile "add_executable\s*(\s*${cmake_target} " || true`
             if [ ! -z "${cmake_file}" ]; then
                 echo "-- adding libraries to ${cmake_file} ${cmake_target} ( ${libs_array[@]} )"
                 sed -i "
@@ -955,9 +955,10 @@ libwebp() {
     local anim_dump=( "libcmt" )
     local cwebp=( "libcmt" )
     local dwebp=( "libcmt" )
-    local get_disto=( "liblzma libjbig" )
+    local vwebp=( "libcmt" )
+    local get_disto=( "libcmt liblzma libjbig" )
     local gif2webp=( "libcmt" )
-    local img2webp=( "liblzma libjbig" )
+    local img2webp=( "libcmt liblzma libjbig" )
     local webp_quality=( "libcmt" )
     local webpinfo=( "libcmt" )
     local webpmux=( "libcmt" )
@@ -966,6 +967,7 @@ libwebp() {
         anim_dump \
         cwebp \
         dwebp \
+        vwebp \
         get_disto \
         gif2webp \
         img2webp \
