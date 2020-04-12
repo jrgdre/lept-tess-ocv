@@ -886,6 +886,7 @@ libtiff() {
     local tiff_M_palette=( "libcmt" )
     local tiffset=( "libcmt" )
     local tiffsplit=( "libcmt" )
+    local tiffgt=( "libcmt" )
     local libs=(\
         addtiffo \
         ascii_tag \
@@ -922,6 +923,7 @@ libtiff() {
         tiff_M_palette \
         tiffset \
         tiffsplit \
+        tiffgt \
     )
     local c_flags=()
     cmake_configure "libtiff" "${SRC_DIR}/libtiff" cm_params libs c_flags
