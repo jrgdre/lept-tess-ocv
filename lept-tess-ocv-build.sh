@@ -928,7 +928,8 @@ libtiff() {
         tiffsplit \
         tiffgt \
     )
-    local c_flags=()
+    local c_flags=( "-DNEED_LIBPORT" )
+    sed -i '/check_symbol_exists(getopt /d' "${SRC_DIR}/libtiff/CMakeLists.txt"
     cmake_configure "libtiff" "${SRC_DIR}/libtiff" cm_params libs c_flags
     cmake_build "libtiff"
 }
