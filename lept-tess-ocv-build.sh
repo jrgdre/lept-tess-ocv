@@ -55,6 +55,7 @@ add_compiler_definitions() {
     local defaults=(\
         "-MP " \
         "-MT " \
+        "-we4013 " \
         "-D_CRT_SECURE_NO_WARNINGS " \
         "-DLZMA_API_STATIC " \
         "-DLIBARCHIVE_STATIC " \
