@@ -1020,6 +1020,27 @@ opencv() {
     )
     local libs=()
     local c_flags=()
+    # inject some patches into jasper
+    sed -i '
+        /#include\s*"jpc_dec.h"/ {
+            a\
+            #include "jasper/jas_debug.h"
+        }
+    ' "${SRC_DIR}/opencv/3rdparty/libjasper/jpc_t1dec.c"
+    sed -i '
+        /#include\s*"jasper\/jas_math.h"/ {
+            a\
+            #include "jasper/jas_debug.h"
+        }
+    ' "${SRC_DIR}/opencv/3rdparty/libjasper/jas_getopt.c"
+    sed -i '
+        /int\s*jpc_tsfb_analyze(/ {
+            i\
+            int jpc_tsfb_analyze2(jpc_tsfb_t *tsfb, int *a, int xstart, int ystart, int width, int height, int stride, int numlvls);
+            i\
+            int jpc_tsfb_synthesize2(jpc_tsfb_t *tsfb, int *a, int xstart, int ystart, int width, int height, int stride, int numlvls);
+        }
+    ' "${SRC_DIR}/opencv/3rdparty/libjasper/jpc_tsfb.c"
     # inject libraries needed for static build
     sed -i '
         /ocv_target_link_libraries(${the_module} PRIVATE ${OPENCV_LINKER_LIBS} ${OPENCV_HAL_LINKER_LIBS} ${IPP_LIBS} ${ARGN})/ {
