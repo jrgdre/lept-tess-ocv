@@ -1137,24 +1137,26 @@ vtk() {
     sed -i "s|target_link_libraries\s*(\s*H5detect|target_link_libraries(H5detect libcmt|" \
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/src/CMakeLists.txt"
     # we have to patch a couple of things
-    sed -i "
-        /#\s*define\s*RTLD_GLOBAL\s*0/ {
-            N
-            /#\s*endif/ {
-                a \
-                #ifndef RTLD_NOW
-                a \
-                #define RTLD_NOW 0x002
-                a \
-                #endif
-            }
-        }
-    " "${SRC_DIR}/vtk/ThirdParty/libxml2/vtklibxml2/xmlmodule.c"
+    # sed -i "
+    #     /#\s*define\s*RTLD_GLOBAL\s*0/ {
+    #         N
+    #         /#\s*endif/ {
+    #             a \
+    #             #ifndef RTLD_NOW
+    #             a \
+    #             #define RTLD_NOW 0x002
+    #             a \
+    #             #endif
+    #         }
+    #     }
+    #" "${SRC_DIR}/vtk/ThirdParty/libxml2/vtklibxml2/xmlmodule.c"
     sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_FCNTL/d"\
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
     sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_FLOCK/d"\
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
     sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_GETRUSAGE/d"\
+        "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_RAND_R/d"\
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
     sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_SIGSETJMP/d"\
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
@@ -1164,6 +1166,28 @@ vtk() {
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
     sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_SYMLINK/d"\
         "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*H5_HAVE_VASPRINTF/d"\
+        "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/config/cmake/H5pubconf.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_STAT/d"\
+        "${SRC_DIR}/vtk/ThirdParty/libxml2/vtklibxml2/config_cmake.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_DLOPEN/d"\
+        "${SRC_DIR}/vtk/ThirdParty/libxml2/vtklibxml2/config_cmake.h.in"
+    sed -i "/\s*#\s*cmakedefine\s*HAVE_SHLLOAD/d"\
+        "${SRC_DIR}/vtk/ThirdParty/libxml2/vtklibxml2/config_cmake.h.in"
+    sed -i '
+        /#ifdef\s*WIN32/ {
+            a\
+            #include <io.h>
+            a\
+            #include <direct.h>
+        }
+    ' "${SRC_DIR}/vtk/ThirdParty/libxml2/vtklibxml2/xmlIO.c"
+    sed -i '
+        /#elif\s*defined _MSC_VER/ {
+            a\
+            #include <io.h>
+        }
+    ' "${SRC_DIR}/vtk/ThirdParty/hdf5/vtkhdf5/hl/src/H5LTanalyze.c"
     cmake_configure "vtk" "${SRC_DIR}/vtk" cm_params libs c_flags
     cmake_build "vtk"
 }
