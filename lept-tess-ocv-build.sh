@@ -1103,7 +1103,7 @@ tesseract() {
         "-DSW_BUILD=OFF " \
         "-DLeptonica_DIR=$BUILD_DIR/leptonica" \
     )
-    local tesseract=( "libjbig liblzma" )
+    local tesseract=( "libcmt libjbig liblzma" )
     local libs=( tesseract )
     local c_flags=()
     cmake_configure "tesseract" "${SRC_DIR}/tesseract" cm_params libs c_flags
