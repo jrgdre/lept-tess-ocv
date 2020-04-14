@@ -1212,7 +1212,7 @@ xz() {
             }
             /HAVE___BUILTIN_BSWAPXX\s*)/ {
                 a\
-    set(HAVE___BUILTIN_BSWAPXX OFF)
+                set(HAVE___BUILTIN_BSWAPXX OFF)
             }
         }
     " "${SRC_DIR}/xz/cmake/tuklib_integer.cmake"
