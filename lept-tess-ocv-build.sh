@@ -252,7 +252,6 @@ cmake_params_get() {
         "-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY " \
         "-DCMAKE_EXE_LINKER_FLAGS=/NODEFAULTLIB:LIBCMT " \
         "-DBUILD_SHARED_LIBS=OFF " \
-        "--graphviz=dependencies " \
         "--no-warn-unused-cli " \
         "-Wno-deprecated " \
         "-Wno-dev " \
