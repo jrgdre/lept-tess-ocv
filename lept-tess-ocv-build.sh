@@ -714,64 +714,6 @@ leptonica() {
     cmake_build "leptonica"
 }
 
-## libarchive 3.4.2
-# wants:
-# - zlib
-# - lzma
-# - zstd
-# - DENABLE_WERROR=OFF or compiling with VS2019 currently fails
-libarchive() {
-    git_clone_pull "libarchive" \
-        https://github.com/libarchive/libarchive.git master \
-        3288ebb0353beb51dfb09d444dedbe9235ead53d
-    local zstd_inc="-DZSTD_INCLUDE_DIR=${INC_INSTALL_DIR}"
-    local zstd_lib="-DZSTD_LIBRARY=${LIB_INSTALL_DIR}/zstd_static.lib"
-    local cm_params=(\
-        "${zstd_inc} " \
-        "${zstd_lib} " \
-        "-DENABLE_WERROR=OFF " \
-        "-DLIBMD_LIBRARY=libcmt" \
-        "-DACL_LIBRARY=libcmt" \
-        "-DRICHACL_LIBRARY=libcmt" \
-    )
-    local libs=()
-    local c_flags=()
-    # fix a couple of things for MSW
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_POSIX_SPAWNP/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_LOCALTIME_R/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_GMTIME_R/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_FSEEKO/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_TIMEGM/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_NL_LANGINFO/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_PIPE/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_FCHMOD/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_SYMLINK/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    sed -i "/\s*#\s*cmakedefine\s*HAVE_LCHMOD/d" \
-        "${SRC_DIR}/libarchive/build/cmake/config.h.in"
-    # patch a couple of things
-    sed -i 's/LIST(APPEND ADDITIONAL_LIBS ${LIBMD_LIBRARY})/LIST(APPEND ADDITIONAL_LIBS libcmt)/I' \
-        "${SRC_DIR}/libarchive/CMakeLists.txt"
-    sed -i 's/LIST(APPEND ADDITIONAL_LIBS ${ACL_LIBRARY})/LIST(APPEND ADDITIONAL_LIBS libcmt)/I' \
-        "${SRC_DIR}/libarchive/CMakeLists.txt"
-    sed -i 's/LIST(APPEND ADDITIONAL_LIBS ${RICHACL_LIBRARY})/LIST(APPEND ADDITIONAL_LIBS libcmt)/I' \
-        "${SRC_DIR}/libarchive/CMakeLists.txt"
-    cmake_configure "libarchive" "${SRC_DIR}/libarchive" cm_params libs c_flags
-    cmake_build "libarchive"
-    # fix some things, so CMake 3.17 uses the static lib
-    rm -f $LIB_INSTALL_DIR/archive.lib
-    rm -f $BIN_INSTALL_DIR/archive.dll
-    mv $LIB_INSTALL_DIR/archive_static.lib $LIB_INSTALL_DIR/archive.lib
-}
-
 ## libjpeg-turbo 2.0.4
 libjpeg-turbo() {
     local ref=166e34213e4f4e2363ce058a7bcc69fd03e38b76
@@ -1301,7 +1243,6 @@ fi
 zlib
 xz
 zstd
-# libarchive <-- ToDo maybe
 giflib
 libpng
 jbigkit
