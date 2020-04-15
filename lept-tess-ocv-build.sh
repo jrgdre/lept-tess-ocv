@@ -801,8 +801,7 @@ libjpeg-turbo() {
         wrjpgcom \
     )
     local c_flags=()
-    cmake_configure "libjpeg-turbo" "${SRC_DIR}/libjpeg-turbo" \
-        cm_params libs c_flags
+    cmake_configure "libjpeg-turbo" "${SRC_DIR}/libjpeg-turbo" cm_params libs c_flags
     cmake_build "libjpeg-turbo"
 }
 
