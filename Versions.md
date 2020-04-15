@@ -4,7 +4,7 @@ authors:
 
 - jrgdre  "Joerg Drechsler, Medical Data Solutions GmbH"
 
-## 2.0.0 2020-04-11
+## 2.0.0 2020-04-15
 
 This version is a complete overhaul of the 1.0.0. release.
 
@@ -15,6 +15,9 @@ This version is a complete overhaul of the 1.0.0. release.
 -   new: opencv support for viz (jrgdre)
 -   new: opencv support for python2 (jrgdre)
 -   new: opencv support for python3 (jrgdre)
+-   new: meta build script lept-tess-opencv_piano.sh, if you like it less noisy
+-   improved: script code quality (all function based)
+-   remove: libarchive, lib won't build as static lib (jrgdre)
 
 Also, we introduced functions for pretty much all tasks, to clean up the code
 and improve overall code quality.
