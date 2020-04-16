@@ -770,15 +770,6 @@ libpng() {
 #   - zlib
 #   - lzma
 #   - zstd
-#   - jbikit
-#   - libjpeg-turbo
-#   - openjpeg
-#   - webp          (not available yet, see downstream)
-#   - glut
-#
-# jpeg 8/12 bit (MSVC: don't know, how to get this working,
-#     "tif_jpeg_12.c(12,12): error C2006: '#include': expected "FILENAME" or <FILENAME>")
-#
 libtiff() {
     git_clone_pull "libtiff" \
         https://gitlab.com/libtiff/libtiff.git master \
@@ -790,9 +781,11 @@ libtiff() {
             $SRC_DIR/libtiff/contrib/CMakeLists.txt
     fi
     local cm_params=(\
-        "-DGLUT_ROOT_PATH=$SRC_DIR/freeglut/ " \
-        "-DOPENGL_LIBRARY_DIR=$LIB_INSTALL_DIR/ " \
+        "-Djbig=OFF " \
+        "-Djpeg=OFF " \
         "-Djpeg12=OFF " \
+        "-Dold-jpeg=OFF " \
+        "-Dwebp=OFF " \
     )
     local addtiffo=( "libcmt" )
     local ascii_tag=( "libcmt" )
