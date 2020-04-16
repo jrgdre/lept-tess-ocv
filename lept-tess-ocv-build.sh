@@ -997,10 +997,6 @@ opencv_contrib() {
 ## openjpeg 2.3.1 (provides JPEG 2000)
 # wants:
 #   - zlib
-#   - png
-#   - tiff
-#   - lcms
-# We have them build from the thrid-party modules provided, by this package.
 openjpeg() {
     git_clone_pull "openjpeg" \
         https://github.com/uclouvain/openjpeg.git master \
