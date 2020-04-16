@@ -958,6 +958,7 @@ opencv() {
         "-DEXECUTABLE_OUTPUT_PATH=$INSTALL_DIR/bin " \
         "-DPYTHON3_EXECUTABLE=$PYTHON3/python " \
         "-DBUILD_TIFF=OFF " \
+		"-DBUILD_opencv_world=ON " \
     )
     local libs=()
     local c_flags=()
