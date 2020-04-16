@@ -870,12 +870,6 @@ libtiff() {
 ## libwebp 1.1.0
 # wants:
 #   - zlib
-#   - png
-#   - jpeg
-#   - tiff
-#   - gif
-#   - zstd
-#   - glut
 # We also build the apps, otherwise leptonica can not find a couple of
 # dependencies.
 libwebp() {
@@ -883,8 +877,23 @@ libwebp() {
         https://chromium.googlesource.com/webm/libwebp master \
         340cdc5f649630d535be0a659f5fd33b3aff15e9
     local cm_params=(\
-        "-DGLUT_ROOT_PATH=$SRC_DIR/freeglut/ " \
-        "-DOPENGL_LIBRARY_DIR=$LIB_INSTALL_DIR/ " \
+        "-DGIF_INCLUDE_DIR= " \
+        "-DGIF_LIBRARY= " \
+        "-DGLUT_INCLUDE_DIR= " \
+        "-DGLUT_glut_LIBRARY= " \
+        "-DGLUT_glut_LIBRARY_DEBUG= " \
+        "-DGLUT_glut_LIBRARY_RELEASE= " \
+        "-DJPEG_INCLUDE_DIR= " \
+        "-DJPEG_LIBRARY_DEBUG= " \
+        "-DJPEG_LIBRARY_RELEASE= " \
+        "-DOPENGL_gl_LIBRARY= " \
+        "-DOPENGL_glu_LIBRARY= " \
+        "-DPNG_PNG_INCLUDE_DIR= " \
+        "-DPNG_LIBRARY_DEBUG= " \
+        "-DPNG_LIBRARY_RELEASE= " \
+        "-DTIFF_INCLUDE_DIR= " \
+        "-DTIFF_LIBRARY_DEBUG= " \
+        "-DTIFF_LIBRARY_RELEASE= " \
     )
     local anim_diff=( "libcmt" )
     local anim_dump=( "libcmt" )
