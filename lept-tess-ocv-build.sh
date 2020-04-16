@@ -870,24 +870,25 @@ libtiff() {
 ## libwebp 1.1.0
 # wants:
 #   - zlib
+#   - freeglut
 # We also build the apps, otherwise leptonica can not find a couple of
 # dependencies.
 libwebp() {
     git_clone_pull "libwebp" \
         https://chromium.googlesource.com/webm/libwebp master \
         340cdc5f649630d535be0a659f5fd33b3aff15e9
+        # "-DGLUT_glut_LIBRARY= " \
+        # "-DGLUT_glut_LIBRARY_DEBUG= " \
+        # "-DGLUT_glut_LIBRARY_RELEASE= " \
+        # "-DOPENGL_gl_LIBRARY= " \
+        # "-DOPENGL_glu_LIBRARY= " \
     local cm_params=(\
+        "-DGLUT_INCLUDE_DIR=${SRC_DIR}/freeglut/include " \
         "-DGIF_INCLUDE_DIR= " \
         "-DGIF_LIBRARY= " \
-        "-DGLUT_INCLUDE_DIR= " \
-        "-DGLUT_glut_LIBRARY= " \
-        "-DGLUT_glut_LIBRARY_DEBUG= " \
-        "-DGLUT_glut_LIBRARY_RELEASE= " \
         "-DJPEG_INCLUDE_DIR= " \
         "-DJPEG_LIBRARY_DEBUG= " \
         "-DJPEG_LIBRARY_RELEASE= " \
-        "-DOPENGL_gl_LIBRARY= " \
-        "-DOPENGL_glu_LIBRARY= " \
         "-DPNG_PNG_INCLUDE_DIR= " \
         "-DPNG_LIBRARY_DEBUG= " \
         "-DPNG_LIBRARY_RELEASE= " \
