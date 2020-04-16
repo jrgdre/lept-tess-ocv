@@ -722,7 +722,7 @@ libjpeg-turbo() {
     local cm_params=(\
         "-DENABLE_SHARED=OFF " \
         "-DENABLE_STATIC=ON " \
-        "-DWITH_12BIT=ON " \
+        "-DWITH_12BIT=OFF " \
     )
     # We have to escape the '-'' character, because this would lead to invalid
     # identifiers.
@@ -734,6 +734,8 @@ libjpeg-turbo() {
     local md5cmp=( "libcmt" )
     local rdjpgcom=( "libcmt" )
     local wrjpgcom=( "libcmt" )
+    local tjbench_M_static=( "libcmt" )
+    local tjunittest_M_static=( "libcmt" )
     local libs=(\
         cjpeg_M_static \
         djpeg_M_static \
@@ -741,6 +743,8 @@ libjpeg-turbo() {
         md5cmp \
         rdjpgcom \
         wrjpgcom \
+        tjbench_M_static \
+        tjunittest_M_static \
     )
     local c_flags=()
     cmake_configure "libjpeg-turbo" "${SRC_DIR}/libjpeg-turbo" cm_params libs c_flags
