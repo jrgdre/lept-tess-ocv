@@ -1247,15 +1247,14 @@ fi
 zlib
 xz
 zstd
-giflib
-libpng
-jbigkit
-libjpeg-turbo
 freeglut
+giflib
+libjpeg-turbo
+jbigkit
 openjpeg
-libtiff   # without libwebp
 libwebp
-libtiff   # with libwebp
+libtiff
+libpng
 vtk
 leptonica
 tesseract

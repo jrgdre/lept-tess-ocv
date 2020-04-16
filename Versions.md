@@ -4,6 +4,13 @@ authors:
 
 - jrgdre  "Joerg Drechsler, Medical Data Solutions GmbH"
 
+## 2.1.0 2020-04-16
+
+-   fix: switch jpeg from 12bit to 8bit format
+-   remove: libtwebp other picture format support/dependecies
+-   remove: libtiff other picture format support/dependecies
+-   new: opencv_world
+
 ## 2.0.0 2020-04-15
 
 This version is a complete overhaul of the 1.0.0. release.
