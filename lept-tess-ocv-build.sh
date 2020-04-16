@@ -769,7 +769,7 @@ libpng() {
     cmake_build "libpng"
 }
 
-## libtiff 4.1.0 (round 1: without webp support)
+## libtiff 4.1.0
 # wants:
 #   - zlib
 #   - lzma
@@ -785,6 +785,7 @@ libtiff() {
             $SRC_DIR/libtiff/contrib/CMakeLists.txt
     fi
     local cm_params=(\
+        "-DGLUT_INCLUDE_DIR=${SRC_DIR}/freeglut/include"
         "-Djbig=OFF " \
         "-Djpeg=OFF " \
         "-Djpeg12=OFF " \
